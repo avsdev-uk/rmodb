@@ -1,16 +1,24 @@
 Package: RMetaObjDB
-Title: What the Package Does (One Line, Title Case)
-Version: 0.0.0.9000
+Title: Metadata-Object pair database
+Version: 0.0.1
 Authors@R: 
-    person(given = "First",
-           family = "Last",
+    person(given = "Craig",
+           family = "Williams",
            role = c("aut", "cre"),
-           email = "first.last@example.com",
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to
-    pick a license
+           email = "craig@avsdev.uk")
+Description: RMetaObjDB implements a metadata-object database for storing R 
+             objects in MySQL. R objects are serialized into a binary memory
+             buffer which is then written into a MySQL database along with 
+             metadata such as creation timestamp, update timestamp, owner,
+             title etc. The metadata fields are customisable on creation of the
+             database. the metadata fields are cleartext and queryable allowing
+             objects to be found and returned. On returning an object, it is
+             de-serialised using the reverseof the serialize to binary memory
+             process.
+License: LGPL (>= 2.1)
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.0.2
+Suggests: 
+    testthat
