@@ -6,6 +6,8 @@
 
 #include "database.h"
 
+#define SQCONN(s) (MYSQL *)s->conn
+
 
 struct stored_conn_t *storedConnections = 0;
 int nextConnId = 1;
@@ -83,7 +85,7 @@ struct stored_conn_t *createStoredConnection(const char *name)
     memcpy(sconn->name, name, strlen(name) * sizeof(char));
   }
 
-  if (mysql_init(sconn->conn) == 0) {
+  if (mysql_init(SQCONN(sconn)) == 0) {
     fprintf(stderr, "mysql_init: unknown error\n");
     destroyStoredConnection(sconn);
     return 0;
@@ -139,7 +141,7 @@ void destroyStoredConnection(struct stored_conn_t *sconn)
   }
 
   if (sconn->isOpen) {
-    mysql_close(sconn->conn);
+    mysql_close(SQCONN(sconn));
   }
 
   if (sconn->name) {
@@ -197,13 +199,13 @@ int setTimeout(struct stored_conn_t *sconn, unsigned int timeout)
 {
   sconn->timeout = timeout;
 
-  if (mysql_optionsv(sconn->conn, MYSQL_OPT_CONNECT_TIMEOUT, (void *)&timeout) != 0) {
+  if (mysql_optionsv(SQCONN(sconn), MYSQL_OPT_CONNECT_TIMEOUT, (void *)&timeout) != 0) {
     return -1;
   }
-  if (mysql_optionsv(sconn->conn, MYSQL_OPT_READ_TIMEOUT, (void *)&timeout) != 0) {
+  if (mysql_optionsv(SQCONN(sconn), MYSQL_OPT_READ_TIMEOUT, (void *)&timeout) != 0) {
     return -1;
   }
-  if (mysql_optionsv(sconn->conn, MYSQL_OPT_WRITE_TIMEOUT, (void *)&timeout) != 0) {
+  if (mysql_optionsv(SQCONN(sconn), MYSQL_OPT_WRITE_TIMEOUT, (void *)&timeout) != 0) {
     return -1;
   }
 
@@ -239,15 +241,15 @@ int connectToHost(struct stored_conn_t *sconn,
     return -1;
   }
 
-  ret = mysql_real_connect(sconn->conn, host, user, passwd, db, port, NULL, 0);
+  ret = mysql_real_connect(SQCONN(sconn), host, user, passwd, db, port, NULL, 0);
   // flags: CLIENT_MULTI_STATEMENTS
 
   if (ret == 0) {
     fprintf(
-      stderr, "mysql_real_connect: (%d) %s\n", mysql_errno(sconn->conn), mysql_error(sconn->conn)
+      stderr, "mysql_real_connect: (%d) %s\n", mysql_errno(SQCONN(sconn)), mysql_error(SQCONN(sconn))
     );
     sconn->needsReset = 1;
-    errno = -mysql_errno(sconn->conn);
+    errno = -mysql_errno(SQCONN(sconn));
     if (freeCon) {
       destroyStoredConnection(sconn);
     }
@@ -282,15 +284,15 @@ int connectToSocket(struct stored_conn_t *sconn,
     return -1;
   }
 
-  ret = mysql_real_connect(sconn->conn, NULL, user, passwd, db, 0, unix_socket, 0);
+  ret = mysql_real_connect(SQCONN(sconn), NULL, user, passwd, db, 0, unix_socket, 0);
   // flags: CLIENT_MULTI_STATEMENTS
 
   if (ret == 0) {
     fprintf(
-      stderr, "mysql_real_connect: (%d) %s\n", mysql_errno(sconn->conn), mysql_error(sconn->conn)
+      stderr, "mysql_real_connect: (%d) %s\n", mysql_errno(SQCONN(sconn)), mysql_error(SQCONN(sconn))
     );
     sconn->needsReset = 1;
-    errno = -mysql_errno(sconn->conn);
+    errno = -mysql_errno(SQCONN(sconn));
     if (freeCon) {
       destroyStoredConnection(sconn);
     }
@@ -309,7 +311,7 @@ void closeConnection(struct stored_conn_t *sconn)
   }
 
   if (sconn->isOpen) {
-    mysql_close(sconn->conn);
+    mysql_close(SQCONN(sconn));
   }
 
   sconn->needsReset = 1;

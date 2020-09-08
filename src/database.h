@@ -1,13 +1,12 @@
 #ifndef __DATABASE_H__
 #define __DATABASE_H__
 
-#include <mysql.h>
 
 struct stored_conn_t {
   int conn_id;
   char *name;
 
-  MYSQL *conn;
+  void *conn;
 
   int isOpen     :1;
   int isTransact :1;
