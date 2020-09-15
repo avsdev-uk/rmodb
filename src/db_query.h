@@ -1,8 +1,8 @@
 #ifndef H__DB_QUERY__
 #define H__DB_QUERY__
 
-#include <stdint.h>
 #include "db_connection.h"
+#include "db_column.h"
 
 // Generic query methods
 uint64_t simpleQuery(struct stored_conn_t *sconn, const char *qry, size_t qry_len);

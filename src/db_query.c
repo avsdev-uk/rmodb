@@ -57,12 +57,18 @@ uint64_t scalarQuery(struct stored_conn_t *sconn, const char *qry, size_t qry_le
     return (uint64_t)-1;
   }
   if (n_row > 1) {
-    fprintf(stderr, "[%d]scalarQuery: WARN: Too many rows in result, only returning first value\n", __LINE__);
+    fprintf(
+      stderr, "[%d]scalarQuery: WARN: Too many rows in result, only returning first value\n",
+      __LINE__
+    );
   }
 
   n_col = mysql_num_fields(result);
   if (n_col > 1) {
-    fprintf(stderr, "[%d]scalarQuery: WARN: Too many columns in result, only returning first value\n", __LINE__);
+    fprintf(
+      stderr, "[%d]scalarQuery: WARN: Too many columns in result, only returning first value\n",
+      __LINE__
+    );
   }
 
   row = mysql_fetch_row(result);

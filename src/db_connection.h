@@ -2,6 +2,7 @@
 #define H__DB_CONNECTION__
 
 #include <stdint.h>
+#include <stdlib.h>
 
 #define SQCONN(s) (MYSQL *)s->conn
 
@@ -27,13 +28,13 @@ struct stored_conn_t {
 struct stored_conn_t *connectionById(int conn_id);
 struct stored_conn_t *connectionByName(const char *name);
 
-int connectionCount();
+int connectionCount(void);
 
 // Connection management
 struct stored_conn_t *createStoredConnection(const char *name);
 struct stored_conn_t *resetStoredConnection(struct stored_conn_t *sconn);
 void destroyStoredConnection(struct stored_conn_t *sconn);
-void destroyAllConnections();
+void destroyAllConnections(void);
 
 int connectToHost(struct stored_conn_t *sconn,
                   const char *host, unsigned int port,
@@ -42,6 +43,6 @@ int connectToSocket(struct stored_conn_t *sconn,
                     const char *unix_socket,
                     const char *user, const char *passwd, const char *db);
 void closeConnection(struct stored_conn_t *sconn);
-void closeAllConnections();
+void closeAllConnections(void);
 
 #endif // H__DB_CONNECTION__

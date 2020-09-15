@@ -3,7 +3,7 @@
 #include "db_timeout.h"
 
 
-int defaultTimeout = -1;
+static unsigned int defaultTimeout = (unsigned int)-1;
 
 
 void setDefaultTimeout(unsigned int timeout)

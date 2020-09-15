@@ -7,6 +7,6 @@
 #include "db_column.h"
 #include "db_query.h"
 
-void sessionEnd();
+void sessionEnd(void);
 
 #endif // H__DATABASE__

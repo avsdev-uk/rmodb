@@ -6,5 +6,5 @@ void sessionEnd()
 {
   destroyAllConnections();
   mysql_library_end();
-  setDefaultTimeout(-1);
+  setDefaultTimeout((unsigned int)-1);
 }

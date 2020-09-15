@@ -1,12 +1,12 @@
-#ifndef __DB_TIMEOUT_H__
-#define __DB_TIMEOUT_H__
+#ifndef H__DB_TIMEOUT__
+#define H__DB_TIMEOUT__
 
 #include "db_connection.h"
 
 // Timeouts can either be set globally or on a per-connection basis
 void setDefaultTimeout(unsigned int timeout);
-unsigned int getDefaultTimeout();
+unsigned int getDefaultTimeout(void);
 
 int setTimeout(struct stored_conn_t *sconn, unsigned int timeout);
 
-#endif // __DB_TIMEOUT_H__
+#endif // H__DB_TIMEOUT__
