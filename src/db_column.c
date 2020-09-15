@@ -154,6 +154,10 @@ struct column_data_t *columnFromResult(struct stored_conn_t *sconn, MYSQL_RES *r
   col->isBlob      = (field->flags & BLOB_FLAG) > 0;
   col->isTimestamp = (field->flags & TIMESTAMP_FLAG) > 0;
 
+  if (num_rows == 0) {
+    return col;
+  }
+
   col->data.vptr = malloc(col->type_bytes * num_rows);
   if (col->data.vptr == NULL) {
     fprintf(stderr, "[%d]malloc: (%d) %s\n", __LINE__, errno, strerror(errno));
@@ -163,7 +167,6 @@ struct column_data_t *columnFromResult(struct stored_conn_t *sconn, MYSQL_RES *r
   }
   memset(col->data.vptr, 0, col->type_bytes * num_rows);
 
-  col->data_sizes = 0;
   if (col->hasPointers) {
     col->data_sizes = (size_t *)malloc(sizeof(size_t) * num_rows);
     if (col->data_sizes == NULL) {
@@ -176,7 +179,6 @@ struct column_data_t *columnFromResult(struct stored_conn_t *sconn, MYSQL_RES *r
     memset(col->data_sizes, 0, sizeof(size_t) * num_rows);
   }
 
-  col->nulls = 0;
   if (col->isNullable) {
     col->nulls = malloc(num_rows / 8 + 1);
     if (col->nulls == NULL) {
