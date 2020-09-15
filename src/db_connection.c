@@ -4,14 +4,13 @@
 #include <errno.h>
 #include <mysql.h>
 
-#include "database.h"
+#include "db_connection.h"
+#include "db_timeout.h"
+#include "db_transaction.h"
 
-#define SQCONN(s) (MYSQL *)s->conn
 
-
-struct stored_conn_t *storedConnections = 0;
-int nextConnId = 1;
-int defaultTimeout = -1;
+static struct stored_conn_t *storedConnections = 0;
+static int nextConnId = 1;
 
 
 struct stored_conn_t *connectionById(int conn_id)
@@ -31,8 +30,11 @@ struct stored_conn_t *connectionByName(const char *name)
 {
   struct stored_conn_t *ptr = storedConnections;
 
+  size_t name_len = strlen(name);
   while (ptr != 0) {
-    if (ptr->name != 0 && strcmp(ptr->name, name) == 0) {
+    if (ptr->name != 0
+      && strlen(ptr->name) == name_len
+      && strncmp(name, ptr->name, name_len) == 0) {
       return ptr;
     }
     ptr = ptr->next;
@@ -41,6 +43,18 @@ struct stored_conn_t *connectionByName(const char *name)
   return 0;
 }
 
+int connectionCount()
+{
+  int i = 0;
+  struct stored_conn_t *ptr = storedConnections;
+
+  while (ptr != 0) {
+    i++;
+    ptr = ptr->next;
+  }
+
+  return i;
+}
 
 struct stored_conn_t *createStoredConnection(const char *name)
 {
@@ -48,14 +62,14 @@ struct stored_conn_t *createStoredConnection(const char *name)
 
   if (name && strlen(name) > 0) {
     if (connectionByName(name) != 0) {
-      fprintf(stderr, "createStoredConnection: Named connection already exists\n");
+      fprintf(stderr, "[%d]createStoredConnection: Named connection already exists\n", __LINE__);
       return 0;
     }
   }
 
   sconn = (struct stored_conn_t *)malloc(sizeof(struct stored_conn_t));
   if (sconn == 0) {
-    fprintf(stderr, "malloc: (%d) %s\n", errno, strerror(errno));
+    fprintf(stderr, "[%d]malloc: (%d) %s\n", __LINE__, errno, strerror(errno));
     return 0;
   }
 
@@ -63,36 +77,38 @@ struct stored_conn_t *createStoredConnection(const char *name)
   sconn->name = 0;
   sconn->conn = (MYSQL *)malloc(sizeof(MYSQL));
   sconn->isOpen = 0;
-  sconn->isTransact = 0;
+  sconn->inTransaction = 0;
   sconn->needsReset = 0;
-  sconn->timeout = -1;
+  sconn->timeout = (unsigned int)-1;
   sconn->prev = 0;
   sconn->next = 0;
 
   if (sconn->conn == 0) {
-    fprintf(stderr, "malloc: (%d) %s\n", errno, strerror(errno));
+    fprintf(stderr, "[%d]malloc: (%d) %s\n", __LINE__, errno, strerror(errno));
     destroyStoredConnection(sconn);
     return 0;
   }
 
   if (name && strlen(name) > 0) {
-    sconn->name = (char *)malloc(sizeof(char) * strlen(name));
+    sconn->name_len = sizeof(char) * strlen(name);
+    sconn->name = (char *)malloc(sconn->name_len + 1);
     if (sconn->name == 0) {
-      fprintf(stderr, "malloc: (%d) %s\n", errno, strerror(errno));
+      fprintf(stderr, "[%d]malloc: (%d) %s\n", __LINE__, errno, strerror(errno));
       destroyStoredConnection(sconn);
       return 0;
     }
-    memcpy(sconn->name, name, strlen(name) * sizeof(char));
+    memcpy(sconn->name, name, sconn->name_len);
+    sconn->name[sconn->name_len] = '\0';
   }
 
   if (mysql_init(SQCONN(sconn)) == 0) {
-    fprintf(stderr, "mysql_init: unknown error\n");
+    fprintf(stderr, "[%d]mysql_init: unknown error\n", __LINE__);
     destroyStoredConnection(sconn);
     return 0;
   }
 
-  if (defaultTimeout >= 0) {
-    setTimeout(sconn, defaultTimeout);
+  if (getDefaultTimeout() != (unsigned int)-1) {
+    setTimeout(sconn, getDefaultTimeout());
   }
 
   if (storedConnections == 0) {
@@ -114,19 +130,20 @@ struct stored_conn_t *resetStoredConnection(struct stored_conn_t *sconn)
 
   new_conn = (MYSQL *)malloc(sizeof(MYSQL));
   if (new_conn == 0) {
-    fprintf(stderr, "malloc: (%d) %s\n", errno, strerror(errno));
+    fprintf(stderr, "[%d]malloc: (%d) %s\n", __LINE__, errno, strerror(errno));
     return 0;
   }
 
   if (mysql_init(new_conn) == 0) {
-    fprintf(stderr, "mysql_init: unknown error\n");
+    fprintf(stderr, "[%d]mysql_init: unknown error\n", __LINE__);
     return 0;
   }
 
+  mysql_close(sconn->conn);
   free(sconn->conn);
   sconn->conn = new_conn;
 
-  if (sconn->timeout >= 0) {
+  if (sconn->timeout != (unsigned int)-1) {
     setTimeout(sconn, sconn->timeout);
   }
 
@@ -136,12 +153,8 @@ struct stored_conn_t *resetStoredConnection(struct stored_conn_t *sconn)
 }
 void destroyStoredConnection(struct stored_conn_t *sconn)
 {
-  if (sconn->isTransact) {
-    // rollback transaction
-  }
-
   if (sconn->isOpen) {
-    mysql_close(SQCONN(sconn));
+    closeConnection(sconn);
   }
 
   if (sconn->name) {
@@ -181,43 +194,7 @@ void destroyAllConnections()
 }
 
 
-int connectionCount()
-{
-  int i = 0;
-  struct stored_conn_t *ptr = storedConnections;
-
-  while (ptr != 0) {
-    i++;
-    ptr = ptr->next;
-  }
-
-  return i;
-}
-
-
-int setTimeout(struct stored_conn_t *sconn, unsigned int timeout)
-{
-  sconn->timeout = timeout;
-
-  if (mysql_optionsv(SQCONN(sconn), MYSQL_OPT_CONNECT_TIMEOUT, (void *)&timeout) != 0) {
-    return -1;
-  }
-  if (mysql_optionsv(SQCONN(sconn), MYSQL_OPT_READ_TIMEOUT, (void *)&timeout) != 0) {
-    return -1;
-  }
-  if (mysql_optionsv(SQCONN(sconn), MYSQL_OPT_WRITE_TIMEOUT, (void *)&timeout) != 0) {
-    return -1;
-  }
-
-  return 0;
-}
-void setDefaultTimeout(unsigned int timeout)
-{
-  defaultTimeout = timeout;
-}
-
-
-int connectToHost(struct stored_conn_t *sconn, 
+int connectToHost(struct stored_conn_t *sconn,
                   const char *host, unsigned int port,
                   const char *user, const char *passwd, const char *db)
 {
@@ -233,7 +210,7 @@ int connectToHost(struct stored_conn_t *sconn,
   }
 
   if (sconn->isOpen) {
-    fprintf(stderr, "connectToHost: Connection already open\n");
+    fprintf(stderr, "[%d]connectToHost: Connection already open\n", __LINE__);
     return -1;
   }
 
@@ -246,10 +223,11 @@ int connectToHost(struct stored_conn_t *sconn,
 
   if (ret == 0) {
     fprintf(
-      stderr, "mysql_real_connect: (%d) %s\n", mysql_errno(SQCONN(sconn)), mysql_error(SQCONN(sconn))
+      stderr, "[%d]mysql_real_connect: (%d) %s\n",
+      __LINE__, mysql_errno(SQCONN(sconn)), mysql_error(SQCONN(sconn))
     );
     sconn->needsReset = 1;
-    errno = -mysql_errno(SQCONN(sconn));
+    errno = -(int)mysql_errno(SQCONN(sconn));
     if (freeCon) {
       destroyStoredConnection(sconn);
     }
@@ -276,7 +254,7 @@ int connectToSocket(struct stored_conn_t *sconn,
   }
 
   if (sconn->isOpen) {
-    fprintf(stderr, "connectToSocket: Connection already open\n");
+    fprintf(stderr, "[%d]connectToSocket: Connection already open\n", __LINE__);
     return -1;
   }
 
@@ -289,10 +267,11 @@ int connectToSocket(struct stored_conn_t *sconn,
 
   if (ret == 0) {
     fprintf(
-      stderr, "mysql_real_connect: (%d) %s\n", mysql_errno(SQCONN(sconn)), mysql_error(SQCONN(sconn))
+      stderr, "[%d]mysql_real_connect: (%d) %s\n",
+      __LINE__, mysql_errno(SQCONN(sconn)), mysql_error(SQCONN(sconn))
     );
     sconn->needsReset = 1;
-    errno = -mysql_errno(SQCONN(sconn));
+    errno = -(int)mysql_errno(SQCONN(sconn));
     if (freeCon) {
       destroyStoredConnection(sconn);
     }
@@ -306,8 +285,8 @@ int connectToSocket(struct stored_conn_t *sconn,
 
 void closeConnection(struct stored_conn_t *sconn)
 {
-  if (sconn->isTransact) {
-    // rollback transaction
+  if (sconn->inTransaction) {
+    transactionRollback(sconn);
   }
 
   if (sconn->isOpen) {
