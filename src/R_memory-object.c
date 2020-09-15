@@ -1,20 +1,19 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
-
 #include <R.h>
 #include <Rinternals.h>
 #include <Rembedded.h>
 
-#include "Rmagic.h"
-#include "Rmemory-object.h"
+#include "R_memory-object.h"
+#include "R_magic.h"
 
 
-int rdataToMemory(const char *filename, struct rmemoryobject_t *memObj)
+int rdataToMemory(const char *filename, struct r_memoryobject_t *mem_obj)
 {
   size_t iosz;
   FILE *fp;
-  int magicSize;
+  int64_t magic_size;
 
   // Open the file
   fp = fopen(filename, "rb");
@@ -24,16 +23,16 @@ int rdataToMemory(const char *filename, struct rmemoryobject_t *memObj)
   }
 
   // Read the magic from the file
-  memObj->magic = R_ReadMagic(fp);
-  if (memObj->magic == R_MAGIC_EMPTY || memObj->magic == R_MAGIC_CORRUPT) {
-    fprintf(stderr, "R_ReadMagic: (%d) Error reading magic/magic corrupted\n", memObj->magic);
+  mem_obj->magic = R_ReadMagic(fp);
+  if (mem_obj->magic == R_MAGIC_EMPTY || mem_obj->magic == R_MAGIC_CORRUPT) {
+    fprintf(stderr, "R_ReadMagic: (%d) Error reading magic/magic corrupted\n", mem_obj->magic);
     fclose(fp);
     return EINVAL;
   }
 
   // Get the current position (ie length of the magic)
-  magicSize = ftell(fp);
-  if (magicSize <= 0) {
+  magic_size = ftell(fp);
+  if (magic_size <= 0) {
     fprintf(stderr, "ftell: (%d) %s\n", errno, strerror(errno));
     fclose(fp);
     return errno;
@@ -47,37 +46,37 @@ int rdataToMemory(const char *filename, struct rmemoryobject_t *memObj)
   }
 
   // Get the current position (ie length of the file + magic)
-  memObj->bufsz = ftell(fp) - magicSize;
-  if (memObj->bufsz <= 0) {
+  mem_obj->buf_size = (size_t)(ftell(fp) - magic_size);
+  if (mem_obj->buf_size <= 0) {
     fprintf(stderr, "ftell: (%d) %s\n", errno, strerror(errno));
     fclose(fp);
     return errno;
   }
 
   // Go back to the (nearly) the beginning of the file
-  if (fseek(fp, magicSize, SEEK_SET) != 0) {
+  if (fseek(fp, magic_size, SEEK_SET) != 0) {
     fprintf(stderr, "fseek: (%d) %s\n", errno, strerror(errno));
     fclose(fp);
     return errno;
   }
 
   // Allocate a memory buffer for the file contents
-  memObj->buf = (char *)malloc((memObj->bufsz) * sizeof(char));
-  if (memObj->buf == 0) {
+  mem_obj->buf = (char *)malloc((mem_obj->buf_size) * sizeof(char));
+  if (mem_obj->buf == 0) {
     fprintf(stderr, "malloc: (%d) %s\n", errno, strerror(errno));
     fclose(fp);
     return errno;
   }
 
   // Read the file contents to the memory buffer
-  iosz = fread(memObj->buf, sizeof(char), memObj->bufsz, fp);
+  iosz = fread(mem_obj->buf, sizeof(char), mem_obj->buf_size, fp);
   if (iosz == 0) {
     fprintf(stderr, "fread: (%d) %s\n", errno, strerror(errno));
     fclose(fp);
     return errno;
   }
-  if (iosz != memObj->bufsz) {
-    fprintf(stderr, "fread: Not enough bytes (got %lu, expected %lu)\n", iosz, memObj->bufsz);
+  if (iosz != mem_obj->buf_size) {
+    fprintf(stderr, "fread: Not enough bytes (got %lu, expected %lu)\n", iosz, mem_obj->buf_size);
     fclose(fp);
     return ENODATA;
   }
@@ -91,7 +90,7 @@ int rdataToMemory(const char *filename, struct rmemoryobject_t *memObj)
   // If you got here, well done, have a zero
   return 0;
 }
-int memoryToRData(const char *filename, struct rmemoryobject_t memObj)
+int memoryToRData(const char *filename, struct r_memoryobject_t mem_obj)
 {
   size_t iosz;
   FILE *fp;
@@ -104,21 +103,21 @@ int memoryToRData(const char *filename, struct rmemoryobject_t memObj)
   }
 
   // Write the R magic
-  if (R_WriteMagic(fp, memObj.magic) != 0) {
+  if (R_WriteMagic(fp, mem_obj.magic) != 0) {
     fprintf(stderr, "R_WriteMagic: (%d) %s\n", errno, strerror(errno));
     fclose(fp);
     return errno;
   }
 
   // Write the file contents from the memory buffer
-  iosz = fwrite(memObj.buf, sizeof(char), memObj.bufsz, fp);
+  iosz = fwrite(mem_obj.buf, sizeof(char), mem_obj.buf_size, fp);
   if (iosz == 0) {
     fprintf(stderr, "fwrite: (%d) %s\n", errno, strerror(errno));
     fclose(fp);
     return errno;
   }
-  if (iosz != memObj.bufsz) {
-    fprintf(stderr, "fwrite: Not enough bytes (wrote %lu, expected %lu)\n", iosz, memObj.bufsz);
+  if (iosz != mem_obj.buf_size) {
+    fprintf(stderr, "fwrite: Not enough bytes (wrote %lu, expected %lu)\n", iosz, mem_obj.buf_size);
     fclose(fp);
     return ENODATA;
   }
@@ -134,14 +133,14 @@ int memoryToRData(const char *filename, struct rmemoryobject_t memObj)
 }
 
 
-SEXP memoryToRObject(struct rmemoryobject_t memObj)
+SEXP memoryToRObject(struct r_memoryobject_t mem_obj)
 {
   FILE *fp;
   struct R_inpstream_st rin;
   SEXP rObj;
-  int format;
+  R_pstream_format_t format;
 
-  switch (memObj.magic) {
+  switch (mem_obj.magic) {
     case R_MAGIC_ASCII_V2:
     case R_MAGIC_ASCII_V3:
       format = R_pstream_ascii_format;
@@ -158,12 +157,12 @@ SEXP memoryToRObject(struct rmemoryobject_t memObj)
       break;
 
     default:
-      fprintf(stderr, "Bad R magic: %d\n", memObj.magic);
+      fprintf(stderr, "Bad R magic: %d\n", mem_obj.magic);
       return R_NilValue;
   }
 
   // Create a memory file device
-  fp = fmemopen(memObj.buf, memObj.bufsz, "r");
+  fp = fmemopen(mem_obj.buf, mem_obj.buf_size, "r");
   if (fp == NULL) {
     fprintf(stderr, "fmemopen: (%d) %s\n", errno, strerror(errno));
     return R_NilValue;
@@ -182,14 +181,14 @@ SEXP memoryToRObject(struct rmemoryobject_t memObj)
   Rf_unprotect(1);
   return rObj;
 }
-struct rmemoryobject_t *robjectToMemory(SEXP rObj, int magic)
+struct r_memoryobject_t *robjectToMemory(SEXP r_obj, int magic)
 {
   FILE *fp;
   int version;
-  int format;
+  R_pstream_format_t format;
   struct R_outpstream_st rout;
-  struct rmemoryobject_t memObj;
-  struct rmemoryobject_t *memObjPtr;
+  struct r_memoryobject_t mem_obj;
+  struct r_memoryobject_t *mem_obj_ptr;
 
   // Get version and format from the R magic header
   switch (magic) {
@@ -229,10 +228,10 @@ struct rmemoryobject_t *robjectToMemory(SEXP rObj, int magic)
       fprintf(stderr, "Bad R magic: %d\n", magic);
       return NULL;
   }
-  memObj.magic = magic;
+  mem_obj.magic = magic;
 
   // Create an in-memory file
-  fp = open_memstream(&(memObj.buf), &(memObj.bufsz));
+  fp = open_memstream(&(mem_obj.buf), &(mem_obj.buf_size));
   if (fp == NULL) {
     fprintf(stderr, "open_memstream: (%d) %s\n", errno, strerror(errno));
     return NULL;
@@ -240,7 +239,7 @@ struct rmemoryobject_t *robjectToMemory(SEXP rObj, int magic)
 
   // Write to in-memory file
   R_InitFileOutPStream(&rout, fp, format, version, NULL, NULL);
-  R_Serialize(rObj, &rout);
+  R_Serialize(r_obj, &rout);
 
   // Close the in-memory file
   if (fclose(fp) != 0) {
@@ -249,21 +248,20 @@ struct rmemoryobject_t *robjectToMemory(SEXP rObj, int magic)
   }
 
   // All done
-  memObjPtr = (struct rmemoryobject_t *)malloc(sizeof(struct rmemoryobject_t));
-  memcpy((void *)memObjPtr, (void *)&memObj, sizeof(struct rmemoryobject_t));
+  mem_obj_ptr = (struct r_memoryobject_t *)malloc(sizeof(struct r_memoryobject_t));
+  memcpy((void *)mem_obj_ptr, (void *)&mem_obj, sizeof(struct r_memoryobject_t));
 
-  return memObjPtr;
+  return mem_obj_ptr;
 }
 
 
 SEXP rdataToRObject(const char *filename)
 {
-  size_t iosz;
   FILE *fp;
   int magic;
   struct R_inpstream_st rin;
-  int format;
-  SEXP rObj;
+  R_pstream_format_t format;
+  SEXP r_obj;
 
   // Open the file
   fp = fopen(filename, "rb");
@@ -302,7 +300,7 @@ SEXP rdataToRObject(const char *filename)
 
   // Read the stream
   R_InitFileInPStream(&rin, fp, format, NULL, NULL);
-  rObj = Rf_protect(R_Unserialize(&rin));
+  r_obj = Rf_protect(R_Unserialize(&rin));
 
   // Close the in-memory file device
   if (fclose(fp) != 0) {
@@ -310,14 +308,13 @@ SEXP rdataToRObject(const char *filename)
   }
 
   // If you got here, well done
-  return rObj;
+  return r_obj;
 }
-int robjectToRData(const char *filename, SEXP rObj, int magic)
+int robjectToRData(const char *filename, SEXP r_obj, int magic)
 {
-  size_t iosz;
   FILE *fp;
   int version;
-  int format;
+  R_pstream_format_t format;
   struct R_outpstream_st rout;
 
   // Get version and format from the R magic
@@ -375,7 +372,7 @@ int robjectToRData(const char *filename, SEXP rObj, int magic)
 
   // Write to file
   R_InitFileOutPStream(&rout, fp, format, version, NULL, NULL);
-  R_Serialize(rObj, &rout);
+  R_Serialize(r_obj, &rout);
 
   // Close the file
   if (fclose(fp) != 0) {

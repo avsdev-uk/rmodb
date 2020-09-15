@@ -1,8 +1,8 @@
-#include "Rmagic.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "R_magic.h"
 
 int R_WriteMagic(FILE *fp, int number)
 {
@@ -67,7 +67,7 @@ int R_ReadMagic(FILE *fp)
       return R_MAGIC_CORRUPT;
     }
   }
- 
+
   /* Version 1 */
   if (strncmp((char*)buf, "RDA1\n", 5) == 0) {
     return R_MAGIC_ASCII_V1;
