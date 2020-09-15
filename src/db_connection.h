@@ -1,5 +1,5 @@
-#ifndef __DATABASE_H__
-#define __DATABASE_H__
+#ifndef __CONNECTION_H__
+#define __CONNECTION_H__
 
 
 struct stored_conn_t {
@@ -45,4 +45,4 @@ int connectToSocket(struct stored_conn_t *sconn,
 void closeConnection(struct stored_conn_t *sconn);
 void closeAllConnections();
 
-#endif // __DATABASE_H__
+#endif // __CONNECTION_H__
