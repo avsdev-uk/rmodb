@@ -7,7 +7,7 @@
 #include "db_column.h"
 
 
-size_t columnTypeToByteSize(enum e_column_type type)
+size_t columnTypeToByteSize(e_column_type type)
 {
   switch(type) {
     case TYPE_BOOL:
@@ -48,7 +48,7 @@ size_t columnTypeToByteSize(enum e_column_type type)
   return sizeof(char *);
 }
 
-enum e_column_type simplifyFieldType(enum enum_field_types sql_type, int is_unsigned)
+e_column_type simplifyFieldType(enum enum_field_types sql_type, int is_unsigned)
 {
   switch(sql_type) {
     case MYSQL_TYPE_TINY:
@@ -110,6 +110,51 @@ enum e_column_type simplifyFieldType(enum enum_field_types sql_type, int is_unsi
 }
 
 
+struct column_data_t *initEmptyColumn(e_column_type type, int nullable, const char *name,
+                                      size_t name_len)
+{
+  struct column_data_t *col;
+
+  if (name_len == 0) {
+    name_len = strlen(name);
+  }
+
+  col = (struct column_data_t *)malloc(sizeof(struct column_data_t));
+  if (col == NULL) {
+    fprintf(stderr, "[%d]malloc: (%d) %s\n", __LINE__, errno, strerror(errno));
+    return 0;
+  }
+  memset(col, 0, sizeof(struct column_data_t));
+
+  col->name_len = name_len;
+  col->name = (char*)malloc(col->name_len + 1);
+  if (col->name == NULL) {
+    fprintf(stderr, "[%d]malloc: (%d) %s\n", __LINE__, errno, strerror(errno));
+    free(col);
+    return 0;
+  }
+  memcpy(col->name, name, col->name_len);
+  *(col->name + col->name_len) = '\0';
+
+  col->type = type;
+  col->type_bytes = columnTypeToByteSize(col->type);
+
+  col->n_values = 0;
+
+  col->hasPointers = col->type == TYPE_STRING
+    || col->type == TYPE_BLOB
+    || col->type == TYPE_RAW;
+  col->isUnsigned  = col->type == TYPE_UINT8
+      || col->type == TYPE_UINT16
+      || col->type == TYPE_UINT32
+      || col->type == TYPE_UINT64;
+  col->isNullable  = nullable > 0;
+  col->isBlob      = type == TYPE_BLOB;
+  col->isTimestamp = type == TYPE_TIMESTAMP;
+
+  return col;
+}
+
 struct column_data_t *columnFromResult(struct stored_conn_t *sconn, MYSQL_RES *result,
                                        uint64_t num_rows)
 {
@@ -125,38 +170,18 @@ struct column_data_t *columnFromResult(struct stored_conn_t *sconn, MYSQL_RES *r
     return 0;
   }
 
-  col = (struct column_data_t *)malloc(sizeof(struct column_data_t));
-  if (col == NULL) {
-    fprintf(stderr, "[%d]malloc: (%d) %s\n", __LINE__, errno, strerror(errno));
-    return 0;
-  }
-  memset(col, 0, sizeof(struct column_data_t));
+  col = initEmptyColumn(
+        simplifyFieldType(field->type, (field->flags & UNSIGNED_FLAG) > 0),
+        (field->flags & NOT_NULL_FLAG) == 0,
+        field->name,
+        field->name_length
+        );
 
-  col->name_size = field->name_length;
-  col->name = (char*)malloc(field->name_length + 1);
-  if (col->name == NULL) {
-    fprintf(stderr, "[%d]malloc: (%d) %s\n", __LINE__, errno, strerror(errno));
-    free(col);
-    return 0;
-  }
-  memcpy(col->name, field->name, col->name_size);
-  *(col->name + col->name_size) = '\0';
-
-  col->type = simplifyFieldType(field->type, (field->flags & UNSIGNED_FLAG) > 0);
-  col->type_bytes = columnTypeToByteSize(col->type);
-
-  col->n_values = num_rows;
-
-  col->hasPointers = col->type == TYPE_STRING
-    || col->type == TYPE_BLOB
-    || col->type == TYPE_RAW;
-  col->isNullable  = (field->flags & NOT_NULL_FLAG) == 0;
-  col->isBlob      = (field->flags & BLOB_FLAG) > 0;
-  col->isTimestamp = (field->flags & TIMESTAMP_FLAG) > 0;
-
-  if (num_rows == 0) {
+  if (col == 0 || num_rows == 0) {
     return col;
   }
+
+  col->n_values = num_rows;
 
   col->data.vptr = malloc(col->type_bytes * num_rows);
   if (col->data.vptr == NULL) {
@@ -168,23 +193,23 @@ struct column_data_t *columnFromResult(struct stored_conn_t *sconn, MYSQL_RES *r
   memset(col->data.vptr, 0, col->type_bytes * num_rows);
 
   if (col->hasPointers) {
-    col->data_sizes = (size_t *)malloc(sizeof(size_t) * num_rows);
-    if (col->data_sizes == NULL) {
+    col->data_lens = (size_t *)malloc(sizeof(size_t) * num_rows);
+    if (col->data_lens == NULL) {
       fprintf(stderr, "[%d]malloc: (%d) %s\n", __LINE__, errno, strerror(errno));
       free(col->data.vptr);
       free(col->name);
       free(col);
       return 0;
     }
-    memset(col->data_sizes, 0, sizeof(size_t) * num_rows);
+    memset(col->data_lens, 0, sizeof(size_t) * num_rows);
   }
 
   if (col->isNullable) {
     col->nulls = malloc(num_rows / 8 + 1);
     if (col->nulls == NULL) {
       fprintf(stderr, "[%d]malloc: (%d) %s\n", __LINE__, errno, strerror(errno));
-      if (col->data_sizes) {
-        free(col->data_sizes);
+      if (col->data_lens) {
+        free(col->data_lens);
       }
       free(col->data.vptr);
       free(col->name);
@@ -207,8 +232,8 @@ void freeColumn(struct column_data_t *col)
       }
     }
 
-    free(col->data_sizes);
-    col->data_sizes = 0;
+    free(col->data_lens);
+    col->data_lens = 0;
   }
 
   if (col->data.vptr) {
@@ -240,6 +265,10 @@ int setColumnValue(struct column_data_t *col, uint64_t row, const char *value, s
   if (value == NULL) {
     columnRowSetNull(col, row);
     return 0;
+  }
+
+  if (value_size == 0) {
+    value_size = strlen(value);
   }
 
   switch(col->type) {
@@ -319,8 +348,8 @@ int setColumnValue(struct column_data_t *col, uint64_t row, const char *value, s
         return -1;
       }
       memcpy(*(col->data.ptr_str + row), value, value_size);
-      *(*(col->data.ptr_str + row) + value_size) = 0;
-      *(col->data_sizes + row) = value_size;
+      *(*(col->data.ptr_str + row) + value_size) = '\0';
+      *(col->data_lens + row) = value_size;
       break;
     }
   }

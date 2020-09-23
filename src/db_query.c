@@ -9,6 +9,10 @@
 
 uint64_t simpleQuery(struct stored_conn_t *sconn, const char *qry, size_t qry_len)
 {
+#ifdef DEBUG
+  printf("QRY: %s\n", qry);
+#endif
+
   if (mysql_real_query(SQCONN(sconn), qry, qry_len) != 0) {
     fprintf(
       stderr, "[%d]mysql_real_query: (%d) %s\n",
@@ -138,7 +142,6 @@ uint64_t tableQuery(struct stored_conn_t *sconn, const char *qry, size_t qry_len
 }
 
 
-
 int scalarInt(struct stored_conn_t *sconn, const char *qry, size_t qry_len, int default_value)
 {
   struct column_data_t **col_data;
@@ -243,15 +246,15 @@ char *scalarString(struct stored_conn_t *sconn, const char *qry, size_t qry_len,
 
   if (n_rows > 0) {
     if (!((*col_data)->isNullable && columnRowIsNull(*col_data, 0))) {
-      retval = (char *)malloc((*col_data)->data_sizes[0] + 1);
+      retval = (char *)malloc((*col_data)->data_lens[0] + 1);
       if (retval == 0) {
         fprintf(stderr, "[%d]malloc: (%d) %s\n", __LINE__, errno, strerror(errno));
         freeColumn(*col_data);
         free(col_data);
         return NULL;
       }
-      memcpy(retval, *((*col_data)->data.ptr_str), (*col_data)->data_sizes[0]);
-      retval[(*col_data)->data_sizes[0]] = '\0';
+      memcpy(retval, *((*col_data)->data.ptr_str), (*col_data)->data_lens[0]);
+      retval[(*col_data)->data_lens[0]] = '\0';
     }
   }
 
