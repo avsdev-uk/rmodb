@@ -1,5 +1,5 @@
-#ifndef DB_WHEREBUILDER_H
-#define DB_WHEREBUILDER_H
+#ifndef H__DB_WHERE_BUILDER__
+#define H__DB_WHERE_BUILDER__
 
 #include <stddef.h>
 #include "db_column.h"
@@ -35,6 +35,7 @@ typedef struct where_builder_t where_builder;
 
 
 where_builder *createWhereBuilder(where_builder *initial_clause);
+int compileWhereBuilder(where_builder *wb, char **str, size_t *str_len);
 void destroyWhereBuilder(where_builder **wb_ptr);
 
 
@@ -42,7 +43,6 @@ where_builder *where(const char *tbl, const char *col, e_where_op op, e_column_t
                      uint32_t n_args, ...);
 where_builder *where_va(const char *tbl, const char *col, e_where_op op, e_column_type type,
                         uint32_t  n_args, va_list args);
-void freeWhere(where_builder **wb_clause_ptr);
 
 
 where_builder *clearWhereValue(where_builder *wb_clause);
@@ -63,10 +63,9 @@ where_builder *whereNotIn(where_builder *wb, const char *tbl, const char *col,
 where_builder *whereNotIn_va(where_builder *wb, const char *tbl, const char *col,
                              e_column_type type, uint32_t n_args, va_list args);
 
-where_builder *whereNext(where_builder *wb);
+where_builder *nextWhere(where_builder *wb);
 where_builder *finalizeWhere(where_builder *wb);
 
 
-int compileWhere(where_builder *wb, char **str, size_t *str_len);
 
-#endif // DB_WHEREBUILDER_H
+#endif // H__DB_WHERE_BUILDER__

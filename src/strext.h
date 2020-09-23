@@ -1,5 +1,5 @@
-#ifndef H__STRCMB__
-#define H__STRCMB__
+#ifndef H__STREXT__
+#define H__STREXT__
 
 #include <stddef.h>
 
@@ -29,4 +29,4 @@ int strbld_ensure_len(str_builder *sb, size_t len, int absolute);
 int strbld_str(str_builder *sb, const char *str, size_t len);
 int strbld_char(str_builder *sb, const char c);
 
-#endif // H__STRCMB__
+#endif // H__STREXT__
