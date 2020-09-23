@@ -2,7 +2,7 @@
 
 #include "database.h"
 
-void sessionEnd()
+void dbSessionEnd()
 {
   destroyAllConnections();
   mysql_library_end();

@@ -9,6 +9,6 @@
 #include "db_value.h"
 #include "db_where-builder.h"
 
-void sessionEnd(void);
+void dbSessionEnd(void);
 
 #endif // H__DATABASE__
