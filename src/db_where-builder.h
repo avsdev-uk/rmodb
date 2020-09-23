@@ -1,0 +1,72 @@
+#ifndef DB_WHEREBUILDER_H
+#define DB_WHEREBUILDER_H
+
+#include <stddef.h>
+#include "db_column.h"
+
+enum e_where_logic_t {
+  UNK,
+  CLAUSE,
+  AND,
+  OR
+};
+
+enum e_where_op_t {
+  EQ,
+  NEQ,
+  GT,
+  GTE,
+  LT,
+  LTE,
+  IS_NULL,
+  NOT_NULL,
+  IN,
+  NOT_IN
+};
+
+struct where_builder_t {
+  struct where_builder_t *up;
+  enum e_where_logic_t logic_type;
+};
+
+typedef enum e_where_logic_t e_where_logic;
+typedef enum e_where_op_t e_where_op;
+typedef struct where_builder_t where_builder;
+
+
+where_builder *createWhereBuilder(where_builder *initial_clause);
+void destroyWhereBuilder(where_builder **wb_ptr);
+
+
+where_builder *where(const char *tbl, const char *col, e_where_op op, e_column_type type,
+                     uint32_t n_args, ...);
+where_builder *where_va(const char *tbl, const char *col, e_where_op op, e_column_type type,
+                        uint32_t  n_args, va_list args);
+void freeWhere(where_builder **wb_clause_ptr);
+
+
+where_builder *clearWhereValue(where_builder *wb_clause);
+where_builder *setWhereValue(where_builder *wb_clause, e_column_type type, uint32_t n_args, ...);
+where_builder *setWhereValue_va(where_builder *wb_clause,
+                                e_column_type type, uint32_t n_args, va_list args);
+
+
+where_builder *whereAnd(where_builder *wb, where_builder *wb_clause);
+where_builder *whereOr(where_builder *wb, where_builder *wb_clause);
+
+where_builder *whereIn(where_builder *wb, const char *tbl, const char *col,
+                       e_column_type type, uint32_t n_args, ...);
+where_builder *whereIn_va(where_builder *wb, const char *tbl, const char *col,
+                          e_column_type type, uint32_t n_args, va_list args);
+where_builder *whereNotIn(where_builder *wb, const char *tbl, const char *col,
+                          e_column_type type, uint32_t n_args, ...);
+where_builder *whereNotIn_va(where_builder *wb, const char *tbl, const char *col,
+                             e_column_type type, uint32_t n_args, va_list args);
+
+where_builder *whereNext(where_builder *wb);
+where_builder *finalizeWhere(where_builder *wb);
+
+
+int compileWhere(where_builder *wb, char **str, size_t *str_len);
+
+#endif // DB_WHEREBUILDER_H

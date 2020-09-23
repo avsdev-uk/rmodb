@@ -6,6 +6,8 @@
 #include "db_transaction.h"
 #include "db_column.h"
 #include "db_query.h"
+#include "db_value.h"
+#include "db_where-builder.h"
 
 void sessionEnd(void);
 
