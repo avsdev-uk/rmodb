@@ -2,7 +2,9 @@
 #define H__DB_COLUMN__
 
 #include <stdint.h>
+#include <stddef.h>
 #include <mysql.h>
+
 #include "db_connection.h"
 
 enum e_column_type_t {
@@ -39,7 +41,7 @@ struct column_data_t {
   uint8_t isBlob      :1;
   uint8_t isTimestamp :1;
 
-  union u_data {
+  union {
     void *vptr;
 
     int8_t *ptr_int8;

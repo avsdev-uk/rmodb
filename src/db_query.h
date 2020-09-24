@@ -1,6 +1,9 @@
 #ifndef H__DB_QUERY__
 #define H__DB_QUERY__
 
+#include <stdint.h>
+#include <stddef.h>
+
 #include "db_connection.h"
 #include "db_column.h"
 

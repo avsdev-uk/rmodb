@@ -6,7 +6,6 @@
 
 #define SQCONN(s) (MYSQL *)s->conn
 
-
 struct stored_conn_t {
   int conn_id;
   char *name;

@@ -2,7 +2,11 @@
 #define H__DB_WHERE_BUILDER__
 
 #include <stddef.h>
+#include <stdint.h>
+#include <stdarg.h>
+
 #include "db_column.h"
+
 
 enum e_where_logic_t {
   UNK,
