@@ -3,8 +3,10 @@
 #include <errno.h>
 #include <string.h>
 #include <mysql.h>
+
 #include "db_connection.h"
 #include "db_column.h"
+#include "strext.h"
 
 
 uint64_t simpleQuery(struct stored_conn_t *sconn, const char *qry, size_t qry_len)
@@ -13,6 +15,8 @@ uint64_t simpleQuery(struct stored_conn_t *sconn, const char *qry, size_t qry_le
   printf("QRY: %s\n", qry);
 #endif
 
+  char *old_ptr;
+
   if (mysql_real_query(SQCONN(sconn), qry, qry_len) != 0) {
     fprintf(
       stderr, "[%d]mysql_real_query: (%d) %s\n",
@@ -20,6 +24,22 @@ uint64_t simpleQuery(struct stored_conn_t *sconn, const char *qry, size_t qry_le
     );
     return (uint64_t)-1;
   }
+
+  if (sconn->last_qry_alloc < qry_len + 1) {
+    old_ptr = sconn->last_qry;
+    sconn->last_qry = realloc(sconn->last_qry, qry_len + 1);
+    if (sconn->last_qry == 0) {
+      sconn->last_qry = old_ptr;
+      fprintf(stderr, "[%d]malloc: (%d) %s\n", __LINE__, errno, strerror(errno));
+      return (uint64_t)-1;
+    }
+    sconn->last_qry_alloc = qry_len + 1;
+  }
+
+  memcpy(sconn->last_qry, qry, qry_len);
+  sconn->last_qry[qry_len] = '\0';
+  sconn->last_qry_len = qry_len;
+  sconn->num_queries++;
 
   return mysql_insert_id(SQCONN(sconn));
 }
@@ -50,8 +70,6 @@ uint64_t tableQuery(struct stored_conn_t *sconn, const char *qry, size_t qry_len
     (*n_cols) = 1;
   }
   if (*n_cols == 0) {
-    // insert/update query
-    // TODO: res = makeInt64() // lastInsertId
     return insertId;
   }
 
@@ -75,7 +93,8 @@ uint64_t tableQuery(struct stored_conn_t *sconn, const char *qry, size_t qry_len
 
   n_rows = mysql_num_rows(result);
   if (scalar_result && n_rows > 1) {
-    // TODO: throw warning due to column sizing issue
+    fprintf(stderr, "[%d]tableQuery: WARN: scalar_result expects 1 row, "
+                    "%llu rows returned from query. Using first result only\n", __LINE__, n_rows);
     n_rows = 1;
   }
 
@@ -236,7 +255,7 @@ char *scalarString(struct stored_conn_t *sconn, const char *qry, size_t qry_len,
                    char *default_value)
 {
   struct column_data_t **col_data;
-  size_t n_cols;
+  size_t n_cols, len;
   char *retval = NULL;
   uint64_t n_rows = tableQuery(sconn, qry, qry_len, 1, &col_data, &n_cols);
 
@@ -246,15 +265,11 @@ char *scalarString(struct stored_conn_t *sconn, const char *qry, size_t qry_len,
 
   if (n_rows > 0) {
     if (!((*col_data)->isNullable && columnRowIsNull(*col_data, 0))) {
-      retval = (char *)malloc((*col_data)->data_lens[0] + 1);
-      if (retval == 0) {
-        fprintf(stderr, "[%d]malloc: (%d) %s\n", __LINE__, errno, strerror(errno));
+      if (strmemcpy(*((*col_data)->data.ptr_str), (*col_data)->data_lens[0], &retval, &len) != 0) {
         freeColumn(*col_data);
         free(col_data);
         return NULL;
       }
-      memcpy(retval, *((*col_data)->data.ptr_str), (*col_data)->data_lens[0]);
-      retval[(*col_data)->data_lens[0]] = '\0';
     }
   }
 

@@ -7,6 +7,7 @@
 #include "db_connection.h"
 #include "db_timeout.h"
 #include "db_transaction.h"
+#include "strext.h"
 
 
 static struct stored_conn_t *storedConnections = 0;
@@ -72,16 +73,11 @@ struct stored_conn_t *createStoredConnection(const char *name)
     fprintf(stderr, "[%d]malloc: (%d) %s\n", __LINE__, errno, strerror(errno));
     return 0;
   }
+  memset(sconn, 0, sizeof(struct stored_conn_t));
 
   sconn->conn_id = nextConnId++;
-  sconn->name = 0;
   sconn->conn = (MYSQL *)malloc(sizeof(MYSQL));
-  sconn->isOpen = 0;
-  sconn->inTransaction = 0;
-  sconn->needsReset = 0;
   sconn->timeout = (unsigned int)-1;
-  sconn->prev = 0;
-  sconn->next = 0;
 
   if (sconn->conn == 0) {
     fprintf(stderr, "[%d]malloc: (%d) %s\n", __LINE__, errno, strerror(errno));
@@ -90,15 +86,10 @@ struct stored_conn_t *createStoredConnection(const char *name)
   }
 
   if (name && strlen(name) > 0) {
-    sconn->name_len = sizeof(char) * strlen(name);
-    sconn->name = (char *)malloc(sconn->name_len + 1);
-    if (sconn->name == 0) {
-      fprintf(stderr, "[%d]malloc: (%d) %s\n", __LINE__, errno, strerror(errno));
+    if (strmemcpy(name, strlen(name), &sconn->name, &sconn->name_len) != 0) {
       destroyStoredConnection(sconn);
       return 0;
     }
-    memcpy(sconn->name, name, sconn->name_len);
-    sconn->name[sconn->name_len] = '\0';
   }
 
   if (mysql_init(SQCONN(sconn)) == 0) {
@@ -157,9 +148,17 @@ void destroyStoredConnection(struct stored_conn_t *sconn)
     closeConnection(sconn);
   }
 
+  if (sconn->last_qry) {
+    free(sconn->last_qry);
+    sconn->last_qry = 0;
+    sconn->last_qry_alloc = 0;
+    sconn->last_qry_len = 0;
+  }
+
   if (sconn->name) {
     free(sconn->name);
     sconn->name = 0;
+    sconn->name_len = 0;
   }
 
   if (sconn->conn) {

@@ -114,14 +114,9 @@ char *db_value_va(char **str, size_t *len, e_column_type type, uint32_t n_args, 
       }
 
       if (tmp_str == 0) {
-        esc_str = (char *)malloc(5);
-        if (esc_str == 0) {
-          fprintf(stderr, "[%d]malloc: (%d) %s\n", __LINE__, errno, strerror(errno));
+        if (strmemcpy("NULL", 4, &esc_str, &esc_len) != 0) {
           return 0;
         }
-        memcpy(esc_str, "NULL", 4);
-        esc_str[4] = '\0';
-        esc_len = 4;
         break;
       }
 
@@ -161,14 +156,9 @@ char *db_value_va(char **str, size_t *len, e_column_type type, uint32_t n_args, 
       tmp_str = va_arg(args, char *);
       tmp_len = va_arg(args, size_t);
 
-      esc_str = (char *)malloc(tmp_len + 1);
-      if (esc_str == 0) {
-        fprintf(stderr, "[%d]malloc: (%d) %s\n", __LINE__, errno, strerror(errno));
+      if (strmemcpy(tmp_str, tmp_len, &esc_str, &esc_len) != 0) {
         return 0;
       }
-      memcpy(esc_str, tmp_str, tmp_len);
-      esc_str[tmp_len] = '\0';
-
       break;
     }
   }

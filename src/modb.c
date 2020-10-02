@@ -38,26 +38,26 @@ int modbExists(struct stored_conn_t *sconn, struct modb_t *modb)
 }
 int modbDestroy(struct stored_conn_t *sconn, struct modb_t *modb)
 {
-  int err = 0
-      || destroyTable(sconn, modb, MDO_GROUPS_TABLE, STR_LEN(MDO_GROUPS_TABLE))
-      || destroyTable(sconn, modb, OBJECTS_TABLE, STR_LEN(OBJECTS_TABLE))
-      || destroyTable(sconn, modb, META_TABLE, STR_LEN(META_TABLE))
-      || destroyTable(sconn, modb, SYS_TABLE, STR_LEN(SYS_TABLE));
+  uint64_t err = 0
+      | destroyTable(sconn, modb, MDO_GROUPS_TABLE, STR_LEN(MDO_GROUPS_TABLE))
+      | destroyTable(sconn, modb, OBJECTS_TABLE, STR_LEN(OBJECTS_TABLE))
+      | destroyTable(sconn, modb, META_TABLE, STR_LEN(META_TABLE))
+      | destroyTable(sconn, modb, SYS_TABLE, STR_LEN(SYS_TABLE));
   return err == 0;
 }
 
 int modbAccountingCreate(struct stored_conn_t *sconn, struct modb_t *modb)
 {
-  if (createOwnersTable(sconn, modb) == (uint64_t)-1) {
+  if (createUsersTable(sconn, modb) == (uint64_t)-1) {
     return -1;
   }
   if (createGroupsTable(sconn, modb) == (uint64_t)-1) {
-    destroyTable(sconn, modb, OWNERS_TABLE, STR_LEN(OWNERS_TABLE));
+    destroyTable(sconn, modb, USERS_TABLE, STR_LEN(USERS_TABLE));
     return -1;
   }
-  if (createOwnerGroupsTable(sconn, modb) == (uint64_t)-1) {
+  if (createUserGroupsTable(sconn, modb) == (uint64_t)-1) {
     destroyTable(sconn, modb, GROUPS_TABLE, STR_LEN(GROUPS_TABLE));
-    destroyTable(sconn, modb, OWNERS_TABLE, STR_LEN(OWNERS_TABLE));
+    destroyTable(sconn, modb, USERS_TABLE, STR_LEN(USERS_TABLE));
     return -1;
   }
 
@@ -65,15 +65,15 @@ int modbAccountingCreate(struct stored_conn_t *sconn, struct modb_t *modb)
 }
 int modbAccountingExists(struct stored_conn_t *sconn, struct modb_t *modb)
 {
-  return tableExists(sconn, modb, OWNERS_TABLE, STR_LEN(OWNERS_TABLE));
+  return tableExists(sconn, modb, USERS_TABLE, STR_LEN(USERS_TABLE));
 }
 int modbAccountingDestroy(struct stored_conn_t *sconn, struct modb_t *modb)
 {
-  int err = 0
-      || destroyTable(sconn, modb, OWNER_GROUPS_TABLE, STR_LEN(OWNER_GROUPS_TABLE))
-      || destroyTable(sconn, modb, GROUPS_TABLE, STR_LEN(GROUPS_TABLE))
-      || destroyTable(sconn, modb, OWNERS_TABLE, STR_LEN(OWNERS_TABLE));
-  return err;
+  uint64_t err = 0
+      | destroyTable(sconn, modb, USER_GROUPS_TABLE, STR_LEN(USER_GROUPS_TABLE))
+      | destroyTable(sconn, modb, GROUPS_TABLE, STR_LEN(GROUPS_TABLE))
+      | destroyTable(sconn, modb, USERS_TABLE, STR_LEN(USERS_TABLE));
+  return err == 0;
 }
 
 int modbMetaExtCreate(struct stored_conn_t *sconn, struct modb_t *modb,
@@ -119,7 +119,7 @@ int modbMetaExtExists(struct stored_conn_t *sconn, struct modb_t *modb)
 }
 int modbMetaExtDestroy(struct stored_conn_t *sconn, struct modb_t *modb)
 {
-  int err = 0
-      || destroyTable(sconn, modb, META_EXT_TABLE, STR_LEN(META_EXT_TABLE));
-  return err;
+  uint64_t err = 0
+      | destroyTable(sconn, modb, META_EXT_TABLE, STR_LEN(META_EXT_TABLE));
+  return err == 0;
 }

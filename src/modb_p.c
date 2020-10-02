@@ -126,7 +126,7 @@ uint64_t createMDOGroupsTable(struct stored_conn_t *sconn, struct modb_t *modb)
   return res;
 }
 
-uint64_t createOwnersTable(struct stored_conn_t *sconn, struct modb_t *modb)
+uint64_t createUsersTable(struct stored_conn_t *sconn, struct modb_t *modb)
 {
   char *qry;
   uint64_t res;
@@ -138,7 +138,7 @@ uint64_t createOwnersTable(struct stored_conn_t *sconn, struct modb_t *modb)
   }
   strbld_str(sb, "CREATE TABLE `", 0);
   strbld_str(sb, modb->name, modb->name_len);
-  strbld_str(sb, OWNERS_TABLE, STR_LEN(OWNERS_TABLE));
+  strbld_str(sb, USERS_TABLE, STR_LEN(USERS_TABLE));
   strbld_str(sb, "` ", 2);
   strbld_str(sb, "("
                  "`id` INT UNSIGNED NOT NULL, "
@@ -189,7 +189,7 @@ uint64_t createGroupsTable(struct stored_conn_t *sconn, struct modb_t *modb)
 
   return res;
 }
-uint64_t createOwnerGroupsTable(struct stored_conn_t *sconn, struct modb_t *modb)
+uint64_t createUserGroupsTable(struct stored_conn_t *sconn, struct modb_t *modb)
 {
   char *qry;
   uint64_t res;
@@ -201,12 +201,12 @@ uint64_t createOwnerGroupsTable(struct stored_conn_t *sconn, struct modb_t *modb
   }
   strbld_str(sb, "CREATE TABLE `", 0);
   strbld_str(sb, modb->name, modb->name_len);
-  strbld_str(sb, OWNER_GROUPS_TABLE, STR_LEN(OWNER_GROUPS_TABLE));
+  strbld_str(sb, USER_GROUPS_TABLE, STR_LEN(USER_GROUPS_TABLE));
   strbld_str(sb, "` ", 2);
   strbld_str(sb, "("
-                 "`owner_id` INT UNSIGNED NOT NULL, "
+                 "`user_id` INT UNSIGNED NOT NULL, "
                  "`group_id` INT UNSIGNED NOT NULL, "
-                 "INDEX(`owner_id`), "
+                 "INDEX(`user_id`), "
                  "INDEX(`group_id`)"
                  ")", 0);
   if (strbld_finalize_or_destroy(&sb, &qry, &qry_len) != 0) {
@@ -239,7 +239,7 @@ int tableExists(struct stored_conn_t *sconn, struct modb_t *modb,
   }
 
   res = scalarString(sconn, qry, qry_len, "Z");
-  if (res == 0 || strncmp(res, "Z", 1) == 0 || strlen(res) != modb->name_len) {
+  if (res == 0 || strlen(res) != (modb->name_len + suffix_len)) {
     retval = -1;
   } else {
     retval = strncmp(res, modb->name, modb->name_len) == 0;
@@ -335,9 +335,9 @@ char *createColString(struct column_data_t *col)
   }
 
   if (col->isNullable) {
-    strbld_str(sb, " NOT NULL", 0);
-  } else {
     strbld_str(sb, " NULL", 0);
+  } else {
+    strbld_str(sb, " NOT NULL", 0);
   }
 
   if (strbld_finalize_or_destroy(&sb, &colstr, &colstr_len) != 0) {

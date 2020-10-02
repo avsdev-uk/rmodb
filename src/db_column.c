@@ -5,6 +5,7 @@
 #include <mysql.h>
 
 #include "db_column.h"
+#include "strext.h"
 
 
 size_t columnTypeToByteSize(e_column_type type)
@@ -111,7 +112,7 @@ e_column_type simplifyFieldType(enum enum_field_types sql_type, int is_unsigned)
 
 
 struct column_data_t *initEmptyColumn(e_column_type type, int nullable, const char *name,
-                                      size_t name_len)
+                                      size_t name_len, const char *table, size_t table_len)
 {
   struct column_data_t *col;
 
@@ -126,15 +127,18 @@ struct column_data_t *initEmptyColumn(e_column_type type, int nullable, const ch
   }
   memset(col, 0, sizeof(struct column_data_t));
 
-  col->name_len = name_len;
-  col->name = (char*)malloc(col->name_len + 1);
-  if (col->name == NULL) {
-    fprintf(stderr, "[%d]malloc: (%d) %s\n", __LINE__, errno, strerror(errno));
+  if (strmemcpy(name, name_len, &col->name, &col->name_len) != 0) {
     free(col);
     return 0;
   }
-  memcpy(col->name, name, col->name_len);
-  *(col->name + col->name_len) = '\0';
+
+  if (table != 0) {
+    if (strmemcpy(table, table_len, &col->table, &col->table_len) != 0) {
+      free(col->name);
+      free(col);
+      return 0;
+    }
+  }
 
   col->type = type;
   col->type_bytes = columnTypeToByteSize(col->type);
@@ -174,7 +178,9 @@ struct column_data_t *columnFromResult(struct stored_conn_t *sconn, MYSQL_RES *r
         simplifyFieldType(field->type, (field->flags & UNSIGNED_FLAG) > 0),
         (field->flags & NOT_NULL_FLAG) == 0,
         field->name,
-        field->name_length
+        field->name_length,
+        field->table,
+        field->table_length
         );
 
   if (col == 0 || num_rows == 0) {
@@ -342,14 +348,9 @@ int setColumnValue(struct column_data_t *col, uint64_t row, const char *value, s
     case TYPE_BLOB:
     case TYPE_RAW:
     {
-      *(col->data.ptr_str + row) = (char *)malloc(value_size + 1);
-      if (*(col->data.ptr_str + row) == 0) {
-        fprintf(stderr, "[%d]malloc: (%d) %s\n", __LINE__, errno, strerror(errno));
+      if (strmemcpy(value, value_size, (col->data.ptr_str + row), (col->data_lens + row)) != 0) {
         return -1;
       }
-      memcpy(*(col->data.ptr_str + row), value, value_size);
-      *(*(col->data.ptr_str + row) + value_size) = '\0';
-      *(col->data_lens + row) = value_size;
       break;
     }
   }

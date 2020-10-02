@@ -13,6 +13,12 @@ struct stored_conn_t {
 
   void *conn;
 
+  char *last_qry;
+  size_t last_qry_len;
+  size_t last_qry_alloc;
+
+  uint32_t num_queries;
+
   uint8_t isOpen        :1;
   uint8_t inTransaction :1;
   uint8_t needsReset    :1;

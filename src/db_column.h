@@ -8,25 +8,28 @@
 #include "db_connection.h"
 
 enum e_column_type_t {
-  TYPE_RAW,
-  TYPE_BOOL,
-  TYPE_INT8,
-  TYPE_UINT8,
-  TYPE_INT16,
-  TYPE_UINT16,
-  TYPE_INT32,
-  TYPE_UINT32,
-  TYPE_INT64,
-  TYPE_UINT64,
-  TYPE_FLOAT,
-  TYPE_DOUBLE,
-  TYPE_STRING,
-  TYPE_BLOB,
-  TYPE_TIMESTAMP
+  TYPE_RAW        = 0 <<  0,
+  TYPE_BOOL       = 1 <<  0,
+  TYPE_INT8       = 1 <<  1,
+  TYPE_UINT8      = 1 <<  2,
+  TYPE_INT16      = 1 <<  3,
+  TYPE_UINT16     = 1 <<  4,
+  TYPE_INT32      = 1 <<  5,
+  TYPE_UINT32     = 1 <<  6,
+  TYPE_INT64      = 1 <<  7,
+  TYPE_UINT64     = 1 <<  8,
+  TYPE_FLOAT      = 1 <<  9,
+  TYPE_DOUBLE     = 1 << 10,
+  TYPE_STRING     = 1 << 11,
+  TYPE_BLOB       = 1 << 12,
+  TYPE_TIMESTAMP  = 1 << 13
 };
 typedef enum e_column_type_t e_column_type;
 
 struct column_data_t {
+  char *table;
+  size_t table_len;
+
   char *name;
   size_t name_len;
 
@@ -86,7 +89,7 @@ static inline void columnRowClearNull(struct column_data_t *col, uint64_t row)
 }
 
 struct column_data_t *initEmptyColumn(e_column_type type, int nullable, const char *name,
-                                      size_t name_len);
+                                      size_t name_len, const char *table, size_t table_len);
 struct column_data_t *columnFromResult(struct stored_conn_t *sconn, MYSQL_RES *result,
                                        uint64_t num_rows);
 void freeColumn(struct column_data_t *col);
