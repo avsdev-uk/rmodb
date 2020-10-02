@@ -13,9 +13,14 @@ Description: RMODB implements a metadata-object database for storing R
              de-serialised using the reverseof the serialize to binary memory
              process.
 License: LGPL (>= 2.1)
+Depends: R (>= 3.5.0)
 Encoding: UTF-8
+NeedsCompilation: yes
 LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.0.2
 Suggests: 
     testthat
+SystemRequirements: libmariadb-client-dev | libmariadb-client-lgpl-dev | libmysqlclient-dev (deb)
+Imports: 
+    checkmate
