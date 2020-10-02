@@ -1,4 +1,4 @@
-Package: RMetaObjDB
+Package: rmodb
 Title: Metadata-Object pair database
 Version: 0.0.1
 Authors@R: 
@@ -6,7 +6,7 @@ Authors@R:
            family = "Williams",
            role = c("aut", "cre"),
            email = "craig@avsdev.uk")
-Description: RMetaObjDB implements a metadata-object database for storing R 
+Description: RMODB implements a metadata-object database for storing R 
              objects in MySQL. R objects are serialized into a binary memory
              buffer which is then written into a MySQL database along with 
              metadata such as creation timestamp, update timestamp, owner,
