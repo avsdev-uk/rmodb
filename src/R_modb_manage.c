@@ -1,26 +1,10 @@
-#include <stdio.h>
 #include <string.h>
 
 #include "R_modb_manage.h"
 #include "R_list_item.h"
-#include "db_connection.h"
-#include "modb.h"
+#include "modb_manage.h"
 
-
-struct stored_conn_t *getConn(SEXP r_conn_ref)
-{
-  struct stored_conn_t *sconn = 0;
-
-  if (Rf_isString(r_conn_ref)) {
-    sconn = connectionByName(Rf_translateCharUTF8(STRING_ELT(r_conn_ref, 0)));
-  } else if (Rf_isInteger(r_conn_ref)) {
-    sconn = connectionById(Rf_asInteger(r_conn_ref));
-  } else {
-    Rf_error("Neither name or id provided");
-  }
-
-  return sconn;
-}
+#include "R_helpers_p.h"
 
 
 SEXP modb_connectionInfo(SEXP r_conn_ref)
@@ -28,7 +12,7 @@ SEXP modb_connectionInfo(SEXP r_conn_ref)
   struct stored_conn_t *sconn;
   SEXP res, conn_name, last_qry, names;
 
-  if ((sconn = getConn(r_conn_ref)) == 0) {
+  if ((sconn = getConnectionByRef(r_conn_ref)) == 0) {
     return R_NilValue;
   }
 
@@ -115,18 +99,18 @@ SEXP modb_connectToSocket(SEXP r_name, SEXP r_socket,
 
   return Rf_ScalarInteger(sconn->conn_id);
 }
-
 SEXP modb_disconnect(SEXP r_conn_ref)
 {
   struct stored_conn_t *sconn;
   int conn_id;
 
-  if ((sconn = getConn(r_conn_ref)) == 0) {
+  if ((sconn = getConnectionByRef(r_conn_ref)) == 0) {
     return R_NilValue;
   }
 
   conn_id = sconn->conn_id;
 
+  modbReleaseUse(sconn);
   closeConnection(sconn);
   destroyStoredConnection(sconn);
 
@@ -139,7 +123,7 @@ SEXP modb_exists(SEXP r_conn_ref, SEXP r_name)
   struct stored_conn_t *sconn;
   struct modb_t modb;
 
-  if ((sconn = getConn(r_conn_ref)) == 0) {
+  if ((sconn = getConnectionByRef(r_conn_ref)) == 0) {
     Rf_error("invalid connection reference\n");
   }
 
@@ -148,6 +132,7 @@ SEXP modb_exists(SEXP r_conn_ref, SEXP r_name)
 
   return Rf_ScalarLogical(modbExists(sconn, &modb) > 0);
 }
+
 SEXP modb_create(SEXP r_conn_ref, SEXP r_name, SEXP r_extra_meta)
 {
   struct stored_conn_t *sconn;
@@ -156,35 +141,32 @@ SEXP modb_create(SEXP r_conn_ref, SEXP r_name, SEXP r_extra_meta)
   size_t n_cols;
   SEXP r_col, r_col_name, r_col_type, r_col_null;
 
-  if ((sconn = getConn(r_conn_ref)) == 0) {
+  if ((sconn = getConnectionByRef(r_conn_ref)) == 0) {
     Rf_error("invalid connection reference\n");
   }
 
   modb.name = Rf_translateCharUTF8(STRING_ELT(r_name, 0));
   modb.name_len = strlen(modb.name);
 
-  if (modbExists(sconn, &modb) == 0) {
+  if (modbExists(sconn, &modb) != 0) {
     Rf_warning("an MODB instance named '%s' already exists\n", modb.name);
     return Rf_ScalarLogical(FALSE);
   }
 
   if (modbCreate(sconn, &modb) != 0) {
     modb_destroy(r_conn_ref, r_name);
-    Rf_warning("failed to create MODB instance");
-    return Rf_ScalarLogical(FALSE);
+    Rf_error("failed to create MODB instance");
   }
   if (modbAccountingCreate(sconn, &modb) != 0) {
     modb_destroy(r_conn_ref, r_name);
-    Rf_warning("failed to create MODB instance");
-    return Rf_ScalarLogical(FALSE);
+    Rf_error("failed to create MODB instance");
   }
   if (!Rf_isNull(r_extra_meta)) {
     n_cols = (size_t)Rf_length(r_extra_meta);
     cols = (struct column_data_t **)calloc(sizeof(struct column_data_t *), n_cols);
     if (cols == 0) {
       modb_destroy(r_conn_ref, r_name);
-      Rf_warning("failed to create MODB instance");
-      return Rf_ScalarLogical(FALSE);
+      Rf_error("failed to create MODB instance");
     }
 
     for (size_t i = 0; i < n_cols; i++) {
@@ -201,16 +183,14 @@ SEXP modb_create(SEXP r_conn_ref, SEXP r_name, SEXP r_extra_meta)
       if (*(cols + i) == 0) {
         freeColumns(cols, i);
         modb_destroy(r_conn_ref, r_name);
-        Rf_warning("failed to create MODB instance");
-        return Rf_ScalarLogical(FALSE);
+        Rf_error("failed to create MODB instance");
       }
     }
 
     if (modbMetaExtCreate(sconn, &modb, cols, n_cols) != 0) {
       freeColumns(cols, n_cols);
       modb_destroy(r_conn_ref, r_name);
-      Rf_warning("failed to create MODB instance");
-      return Rf_ScalarLogical(FALSE);
+      Rf_error("failed to create MODB instance");
     }
 
     freeColumns(cols, n_cols);
@@ -223,7 +203,7 @@ SEXP modb_destroy(SEXP r_conn_ref, SEXP r_name)
   struct stored_conn_t *sconn;
   struct modb_t modb;
 
-  if ((sconn = getConn(r_conn_ref)) == 0) {
+  if ((sconn = getConnectionByRef(r_conn_ref)) == 0) {
     Rf_error("invalid connection reference\n");
   }
 
@@ -235,6 +215,30 @@ SEXP modb_destroy(SEXP r_conn_ref, SEXP r_name)
   }
   modbAccountingDestroy(sconn, &modb);
   modbDestroy(sconn, &modb);
+
+  return Rf_ScalarLogical(TRUE);
+}
+
+
+SEXP modb_use(SEXP r_conn_ref, SEXP r_name, SEXP r_override)
+{
+  struct stored_conn_t *sconn;
+  struct modb_t modb;
+
+  if ((sconn = getConnectionByRef(r_conn_ref)) == 0) {
+    Rf_error("invalid connection reference\n");
+  }
+
+  modb.name = Rf_translateCharUTF8(STRING_ELT(r_name, 0));
+  modb.name_len = strlen(modb.name);
+
+  if (modbExists(sconn, &modb) == 0) {
+    Rf_error("an MODB instance named '%s' does not exist\n", modb.name);
+  }
+
+  if (modbUse(sconn, &modb, Rf_asLogical(r_override)) != 0) {
+    return Rf_ScalarLogical(FALSE);
+  }
 
   return Rf_ScalarLogical(TRUE);
 }

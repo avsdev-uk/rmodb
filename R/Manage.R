@@ -224,3 +224,10 @@ modb_destroy <- function(modb_name, ...) {
   res <- .Call(c_modb_destroy, conn_ref, modb_name)
   return(res)
 }
+
+#' @export
+modb_use <- function(modb_name, override = FALSE, ...) {
+  conn_ref <- modb_conn_ref(args = list(...))
+  res <- .Call(c_modb_use, conn_ref, modb_name, as.logical(override))
+  return(res)
+}
