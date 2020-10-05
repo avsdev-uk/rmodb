@@ -9,6 +9,20 @@
 #include "modb_p.h"
 
 
+int modbUse(struct stored_conn_t *sconn, struct modb_t *modb, int override)
+{
+  return connectionUseMODB(sconn, modb, override) == 0;
+}
+int modbFindUse(struct stored_conn_t *sconn, struct modb_t *modb)
+{
+  return connectionGetUse(sconn, modb) == 1;
+}
+void modbReleaseUse(struct stored_conn_t *sconn)
+{
+  connectionReleaseMODB(sconn);
+}
+
+
 int modbCreate(struct stored_conn_t *sconn, struct modb_t *modb)
 {
   if (createSysTable(sconn, modb) == (uint64_t)-1) {

@@ -38,5 +38,8 @@ int tableExists(struct stored_conn_t *sconn, struct modb_t *modb,
 uint64_t destroyTable(struct stored_conn_t *sconn, struct modb_t *modb,
                       const char *suffix, size_t suffix_len);
 
+int connectionUseMODB(struct stored_conn_t *sconn, struct modb_t *modb, int override);
+int connectionGetUse(struct stored_conn_t *sconn, struct modb_t *modb);
+void connectionReleaseMODB(struct stored_conn_t *sconn);
 
 #endif // H__MODB_P__

@@ -7,6 +7,18 @@
 #include "strext.h"
 
 
+struct sconn_modb_use_t {
+  struct stored_conn_t *sconn;
+  char *modb_name;
+  size_t modb_name_len;
+
+  struct sconn_modb_use_t *next;
+  struct sconn_modb_use_t *prev;
+};
+
+static struct sconn_modb_use_t *storedUses = 0;
+
+
 uint64_t createSysTable(struct stored_conn_t *sconn, struct modb_t *modb)
 {
   char *qry;
@@ -386,3 +398,130 @@ uint64_t destroyTable(struct stored_conn_t *sconn, struct modb_t *modb,
   return res;
 }
 
+
+struct sconn_modb_use_t *allocUse(struct stored_conn_t *sconn, struct modb_t *modb)
+{
+  struct sconn_modb_use_t *ptr = 0;
+  struct sconn_modb_use_t *tail;
+
+  ptr = (struct sconn_modb_use_t *)malloc(sizeof(struct sconn_modb_use_t));
+  if (ptr == 0) {
+    fprintf(stderr, "[%d]malloc: (%d) %s\n", __LINE__, errno, strerror(errno));
+    return 0;
+  }
+  memset(ptr, 0, sizeof(struct sconn_modb_use_t));
+
+  ptr->sconn = sconn;
+  if (strmemcpy(modb->name, modb->name_len, &ptr->modb_name, &ptr->modb_name_len) == 0) {
+    fprintf(stderr, "[%d]malloc: (%d) %s\n", __LINE__, errno, strerror(errno));
+    free(ptr);
+    return 0;
+  }
+
+  if (storedUses == 0) {
+    storedUses = ptr;
+  } else {
+    tail = storedUses;
+    while (tail->next != 0) {
+      tail = tail->next;
+    }
+    tail->next = ptr;
+    ptr->prev = tail;
+  }
+
+  return ptr;
+}
+void freeUse(struct sconn_modb_use_t *ptr)
+{
+  if (ptr->prev) {
+    ptr->prev->next = ptr->next;
+  } else {
+    storedUses = ptr->next;
+  }
+
+  if (ptr->next) {
+    ptr->next->prev = ptr->prev;
+  }
+
+  free(ptr->modb_name);
+  free(ptr);
+}
+
+int connectionUseMODB(struct stored_conn_t *sconn, struct modb_t *modb, int override)
+{
+  struct sconn_modb_use_t *ptr = storedUses;
+  char *old_name;
+
+  while (ptr != 0) {
+    if (ptr->sconn == sconn) {
+      break;
+    }
+    ptr = ptr->next;
+  }
+
+  if (ptr != 0) {
+    if (ptr->modb_name_len != modb->name_len
+        && strncmp(ptr->modb_name, modb->name, modb->name_len) == 0) {
+      return 0;
+    } else {
+      if (override == 0) {
+        fprintf(
+              stderr,
+              "[%d]useMODB: Connection is already using MODB '%s'\n",
+              __LINE__, ptr->modb_name
+              );
+        return -1;
+      }
+
+      old_name = ptr->modb_name;
+      ptr->modb_name = (char *)realloc(ptr->modb_name, modb->name_len);
+      if (ptr->modb_name == 0) {
+        fprintf(stderr, "[%d]realloc: (%d) %s\n", __LINE__, errno, strerror(errno));
+        ptr->modb_name = old_name;
+        return -1;
+      }
+      memcpy(ptr->modb_name, modb->name, modb->name_len);
+      return 0;
+    }
+  }
+
+  if (allocUse(sconn, modb) == 0) {
+    return -1;
+  }
+
+  return 0;
+}
+int connectionGetUse(struct stored_conn_t *sconn, struct modb_t *modb)
+{
+  struct sconn_modb_use_t *ptr = storedUses;
+
+  while (ptr != 0) {
+    if (ptr->sconn == sconn) {
+      if (modb != 0) {
+        modb->name = ptr->modb_name;
+        modb->name_len = ptr->modb_name_len;
+        return 1;
+      }
+    }
+    ptr = ptr->next;
+  }
+
+  return 0;
+}
+void connectionReleaseMODB(struct stored_conn_t *sconn)
+{
+  struct sconn_modb_use_t *ptr = storedUses;
+
+  while (ptr != 0) {
+    if (ptr->sconn == sconn) {
+      break;
+    }
+    ptr = ptr->next;
+  }
+
+  if (ptr == 0) {
+    return;
+  }
+
+  freeUse(ptr);
+}
