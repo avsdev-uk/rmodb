@@ -4,8 +4,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "db_connection.h"
-#include "db_column.h"
+#include "database.h"
 #include "modb_types.h"
 
 
@@ -30,12 +29,14 @@ uint64_t createUsersTable(struct stored_conn_t *sconn, struct modb_t *modb);
 uint64_t createGroupsTable(struct stored_conn_t *sconn, struct modb_t *modb);
 uint64_t createUserGroupsTable(struct stored_conn_t *sconn, struct modb_t *modb);
 
+uint64_t createMetaExtTable(struct stored_conn_t *sconn, struct modb_t *modb,
+                            struct column_data_t **col_data, size_t cols);
+
 int tableExists(struct stored_conn_t *sconn, struct modb_t *modb,
                 const char *suffix, size_t suffix_len);
 
 uint64_t destroyTable(struct stored_conn_t *sconn, struct modb_t *modb,
                       const char *suffix, size_t suffix_len);
 
-char *createColString(struct column_data_t *col);
 
 #endif // H__MODB_P__

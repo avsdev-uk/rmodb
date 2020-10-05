@@ -1,8 +1,7 @@
 #ifndef H__MODB__
 #define H__MODB__
 
-#include "db_connection.h"
-#include "db_column.h"
+#include "database.h"
 #include "modb_types.h"
 
 

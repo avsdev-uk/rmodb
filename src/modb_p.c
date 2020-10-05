@@ -4,7 +4,6 @@
 #include <errno.h>
 
 #include "modb_p.h"
-#include "db_query.h"
 #include "strext.h"
 
 
@@ -219,64 +218,6 @@ uint64_t createUserGroupsTable(struct stored_conn_t *sconn, struct modb_t *modb)
   return res;
 }
 
-int tableExists(struct stored_conn_t *sconn, struct modb_t *modb,
-                const char *suffix, size_t suffix_len)
-{
-  char *qry, *res;
-  size_t qry_len;
-  str_builder *sb;
-  int retval = 0;
-
-  if ((sb = strbld_create()) == 0) {
-    return -errno;
-  }
-  retval += strbld_str(sb, "SHOW TABLES LIKE '", 0);
-  retval += strbld_str(sb, modb->name, modb->name_len);
-  retval += strbld_str(sb, suffix, suffix_len);
-  retval += strbld_char(sb, '\'');
-  if (strbld_finalize_or_destroy(&sb, &qry, &qry_len) != 0) {
-    return -errno;
-  }
-
-  res = scalarString(sconn, qry, qry_len, "Z");
-  if (res == 0 || strlen(res) != (modb->name_len + suffix_len)) {
-    retval = -1;
-  } else {
-    retval = strncmp(res, modb->name, modb->name_len) == 0;
-  }
-
-  if (res != 0) {
-    free(res);
-  }
-  free(qry);
-
-  return retval;
-}
-
-uint64_t destroyTable(struct stored_conn_t *sconn, struct modb_t *modb,
-                      const char *suffix, size_t suffix_len)
-{
-  char *qry;
-  uint64_t res;
-  size_t qry_len;
-  str_builder *sb;
-
-  if ((sb = strbld_create()) == 0) {
-    return (uint64_t)-1;
-  }
-  strbld_str(sb, "DROP TABLE `", 0);
-  strbld_str(sb, modb->name, modb->name_len);
-  strbld_str(sb, suffix, suffix_len);
-  strbld_str(sb, "` ", 2);
-  if (strbld_finalize_or_destroy(&sb, &qry, &qry_len) != 0) {
-    return (uint64_t)-1;
-  }
-
-  res = simpleQuery(sconn, qry, qry_len);
-  free(qry);
-
-  return res;
-}
 
 char *createColString(struct column_data_t *col)
 {
@@ -345,5 +286,103 @@ char *createColString(struct column_data_t *col)
   }
 
   return colstr;
+}
+uint64_t createMetaExtTable(struct stored_conn_t *sconn, struct modb_t *modb,
+                            struct column_data_t **col_data, size_t cols)
+{
+  char *qry;
+  uint64_t res;
+  size_t qry_len;
+  str_builder *sb;
+  char *colstr;
+
+  if ((sb = strbld_create()) == 0) {
+    return (uint64_t)-1;
+  }
+  strbld_str(sb, "CREATE TABLE `", 0);
+  strbld_str(sb, modb->name, modb->name_len);
+  strbld_str(sb, META_EXT_TABLE, STR_LEN(META_EXT_TABLE));
+  strbld_str(sb, "` ", 2);
+  strbld_str(sb, "(", 1);
+  strbld_str(sb, "`mdo_id` INT UNSIGNED NOT NULL", 0);
+  for (size_t c = 0; c < cols; c++) {
+    struct column_data_t *col = *(col_data + c);
+    if ((colstr = createColString(col)) == 0) {
+      strbld_destroy(&sb);
+      return (uint64_t)-1;
+    }
+    strbld_str(sb, colstr, 0);
+    free(colstr);
+  }
+  strbld_str(sb, ", INDEX (`mdo_id`))", 0);
+  if (strbld_finalize_or_destroy(&sb, &qry, &qry_len) != 0) {
+    return (uint64_t)-1;
+  }
+
+  res = simpleQuery(sconn, qry, qry_len);
+  free(qry);
+
+  return res;
+}
+
+
+int tableExists(struct stored_conn_t *sconn, struct modb_t *modb,
+                const char *suffix, size_t suffix_len)
+{
+  char *qry, *res;
+  size_t qry_len;
+  str_builder *sb;
+  int retval = 0;
+
+  if ((sb = strbld_create()) == 0) {
+    return -errno;
+  }
+  retval += strbld_str(sb, "SHOW TABLES LIKE '", 0);
+  retval += strbld_str(sb, modb->name, modb->name_len);
+  retval += strbld_str(sb, suffix, suffix_len);
+  retval += strbld_char(sb, '\'');
+  if (strbld_finalize_or_destroy(&sb, &qry, &qry_len) != 0) {
+    return -errno;
+  }
+
+  res = scalarString(sconn, qry, qry_len, "Z");
+  if (res == 0 || strlen(res) != (modb->name_len + suffix_len)) {
+    retval = -1;
+  } else {
+    retval = strncmp(res, modb->name, modb->name_len) == 0;
+  }
+
+  if (res != 0) {
+    free(res);
+  }
+  free(qry);
+
+  return retval;
+}
+
+
+uint64_t destroyTable(struct stored_conn_t *sconn, struct modb_t *modb,
+                      const char *suffix, size_t suffix_len)
+{
+  char *qry;
+  uint64_t res;
+  size_t qry_len;
+  str_builder *sb;
+
+  if ((sb = strbld_create()) == 0) {
+    return (uint64_t)-1;
+  }
+  strbld_str(sb, "DROP TABLE `", 0);
+  strbld_str(sb, modb->name, modb->name_len);
+  strbld_str(sb, suffix, suffix_len);
+  strbld_str(sb, "` ", 2);
+  if (strbld_finalize_or_destroy(&sb, &qry, &qry_len) != 0) {
+    return (uint64_t)-1;
+  }
+
+  res = simpleQuery(sconn, qry, qry_len);
+  free(qry);
+
+  return res;
 }
 

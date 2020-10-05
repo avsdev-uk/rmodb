@@ -4,9 +4,9 @@
 #include <errno.h>
 
 #include "modb.h"
-#include "modb_p.h"
-#include "db_query.h"
 #include "strext.h"
+
+#include "modb_p.h"
 
 
 int modbCreate(struct stored_conn_t *sconn, struct modb_t *modb)
@@ -79,39 +79,9 @@ int modbAccountingDestroy(struct stored_conn_t *sconn, struct modb_t *modb)
 int modbMetaExtCreate(struct stored_conn_t *sconn, struct modb_t *modb,
                       struct column_data_t **col_data, size_t cols)
 {
-  char *qry;
-  uint64_t res;
-  size_t qry_len;
-  str_builder *sb;
-  char *colstr;
-
-  if ((sb = strbld_create()) == 0) {
-    return -1;
-  }
-  strbld_str(sb, "CREATE TABLE `", 0);
-  strbld_str(sb, modb->name, modb->name_len);
-  strbld_str(sb, META_EXT_TABLE, STR_LEN(META_EXT_TABLE));
-  strbld_str(sb, "` ", 2);
-  strbld_str(sb, "(", 1);
-  strbld_str(sb, "`mdo_id` INT UNSIGNED NOT NULL", 0);
-  for (size_t c = 0; c < cols; c++) {
-    struct column_data_t *col = *(col_data + c);
-    if ((colstr = createColString(col)) == 0) {
-      strbld_destroy(&sb);
-      return -1;
-    }
-    strbld_str(sb, colstr, 0);
-    free(colstr);
-  }
-  strbld_str(sb, ", INDEX (`mdo_id`))", 0);
-  if (strbld_finalize_or_destroy(&sb, &qry, &qry_len) != 0) {
-    return -1;
-  }
-
-  res = simpleQuery(sconn, qry, qry_len);
-  free(qry);
-
-  return (res == (uint64_t)-1) ? -1 : (int)res;
+  uint64_t err = 0
+      | createMetaExtTable(sconn, modb, col_data, cols);
+  return err == 0;
 }
 int modbMetaExtExists(struct stored_conn_t *sconn, struct modb_t *modb)
 {
