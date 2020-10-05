@@ -358,8 +358,18 @@ int tableExists(struct stored_conn_t *sconn, struct modb_t *modb,
   }
 
   res = scalarString(sconn, qry, qry_len, "Z");
-  if (res == 0 || strlen(res) != (modb->name_len + suffix_len)) {
+  /* Result:
+   * 0: query success, no result returned
+   * 1: query failed, default ("Z") returned
+   * 2: query success, result does not match required length
+   * 3: query success, result matches required length (check content)
+   */
+  if (res == 0) {
+    retval = 0;
+  } else if (strlen(res) == 1 && strncmp(res, "Z", 1) == 0) {
     retval = -1;
+  } else if (strlen(res) != (modb->name_len + suffix_len)) {
+    retval = 0;
   } else {
     retval = strncmp(res, modb->name, modb->name_len) == 0;
   }
