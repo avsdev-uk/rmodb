@@ -6,8 +6,8 @@
 #include <errno.h>
 #include <mysql.h>
 
-#include "strext.h"
 #include "db_value.h"
+#include "strext.h"
 
 char *db_value(char **str, size_t *len, e_column_type type, uint32_t n_args, ...)
 {
