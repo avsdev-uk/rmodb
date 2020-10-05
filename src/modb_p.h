@@ -4,6 +4,7 @@
 #include <stddef.h>
 
 #include "modb_types.h"
+#include "strext.h"
 
 
 #define SYS_TABLE "_sys"
@@ -17,8 +18,6 @@
 
 #define META_EXT_TABLE "_meta_ext"
 
-
-typedef struct str_builder_t str_builder;
 
 char *modbTableName(struct modb_t *modb, const char *suffix, size_t suffix_len);
 void modbTableName_sb(str_builder *sb, struct modb_t *modb, const char *suffix, size_t suffix_len);
