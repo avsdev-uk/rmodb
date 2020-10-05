@@ -11,6 +11,8 @@ static const R_CallMethodDef callMethods[] = {
   {"modb_exists", (DL_FUNC) &modb_exists, 2},
   {"modb_create", (DL_FUNC) &modb_create, 3},
   {"modb_destroy", (DL_FUNC) &modb_destroy, 2},
+
+  {"modb_use", (DL_FUNC) &modb_use, 2},
   {NULL, NULL, 0}
 };
 
