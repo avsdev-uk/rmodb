@@ -12,25 +12,25 @@
 int modbCreate(struct stored_conn_t *sconn, struct modb_t *modb)
 {
   if (createSysTable(sconn, modb) == (uint64_t)-1) {
-    return -1;
+    return 0;
   }
   if (createMetaTable(sconn, modb) == (uint64_t)-1) {
     destroyTable(sconn, modb, SYS_TABLE, STR_LEN(SYS_TABLE));
-    return -1;
+    return 0;
   }
   if (createObjectsTable(sconn, modb) == (uint64_t)-1) {
     destroyTable(sconn, modb, META_TABLE, STR_LEN(META_TABLE));
     destroyTable(sconn, modb, SYS_TABLE, STR_LEN(SYS_TABLE));
-    return -1;
+    return 0;
   }
   if (createMDOGroupsTable(sconn, modb) == (uint64_t)-1) {
     destroyTable(sconn, modb, OBJECTS_TABLE, STR_LEN(OBJECTS_TABLE));
     destroyTable(sconn, modb, META_TABLE, STR_LEN(META_TABLE));
     destroyTable(sconn, modb, SYS_TABLE, STR_LEN(SYS_TABLE));
-    return -1;
+    return 0;
   }
 
-  return 0;
+  return 1;
 }
 int modbExists(struct stored_conn_t *sconn, struct modb_t *modb)
 {
@@ -49,19 +49,19 @@ int modbDestroy(struct stored_conn_t *sconn, struct modb_t *modb)
 int modbAccountingCreate(struct stored_conn_t *sconn, struct modb_t *modb)
 {
   if (createUsersTable(sconn, modb) == (uint64_t)-1) {
-    return -1;
+    return 0;
   }
   if (createGroupsTable(sconn, modb) == (uint64_t)-1) {
     destroyTable(sconn, modb, USERS_TABLE, STR_LEN(USERS_TABLE));
-    return -1;
+    return 0;
   }
   if (createUserGroupsTable(sconn, modb) == (uint64_t)-1) {
     destroyTable(sconn, modb, GROUPS_TABLE, STR_LEN(GROUPS_TABLE));
     destroyTable(sconn, modb, USERS_TABLE, STR_LEN(USERS_TABLE));
-    return -1;
+    return 0;
   }
 
-  return 0;
+  return 1;
 }
 int modbAccountingExists(struct stored_conn_t *sconn, struct modb_t *modb)
 {
