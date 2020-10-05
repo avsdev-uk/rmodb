@@ -3,6 +3,7 @@
 #include <string.h>
 #include <errno.h>
 
+#include "modb_manage_p.h"
 #include "modb_p.h"
 #include "strext.h"
 
@@ -30,10 +31,8 @@ uint64_t createSysTable(struct stored_conn_t *sconn, struct modb_t *modb)
     return (uint64_t)-1;
   }
   strbld_str(sb, "CREATE TABLE `", 0);
-  strbld_str(sb, modb->name, modb->name_len);
-  strbld_str(sb, SYS_TABLE, STR_LEN(SYS_TABLE));
-  strbld_str(sb, "` ", 2);
-  strbld_str(sb, "("
+  modbTableName_sb(sb, modb, SYS_TABLE, STR_LEN(SYS_TABLE));
+  strbld_str(sb, "` ("
                  "`key` VARCHAR(255) NULL, "
                  "`value` VARCHAR(255) NULL, "
                  "UNIQUE(`key`)"
@@ -58,10 +57,8 @@ uint64_t createMetaTable(struct stored_conn_t *sconn, struct modb_t *modb)
     return (uint64_t)-1;
   }
   strbld_str(sb, "CREATE TABLE `", 0);
-  strbld_str(sb, modb->name, modb->name_len);
-  strbld_str(sb, META_TABLE, STR_LEN(META_TABLE));
-  strbld_str(sb, "` ", 2);
-  strbld_str(sb, "("
+  modbTableName_sb(sb, modb, META_TABLE, STR_LEN(META_TABLE));
+  strbld_str(sb, "` ("
                  "`mdo_id` INT UNSIGNED NOT NULL AUTO_INCREMENT, "
                  "`title` VARCHAR(255) NOT NULL, "
                  "`owner` INT UNSIGNED NOT NULL, "
@@ -90,10 +87,8 @@ uint64_t createObjectsTable(struct stored_conn_t *sconn, struct modb_t *modb)
     return (uint64_t)-1;
   }
   strbld_str(sb, "CREATE TABLE `", 0);
-  strbld_str(sb, modb->name, modb->name_len);
-  strbld_str(sb, OBJECTS_TABLE, STR_LEN(OBJECTS_TABLE));
-  strbld_str(sb, "` ", 2);
-  strbld_str(sb, "("
+  modbTableName_sb(sb, modb, OBJECTS_TABLE, STR_LEN(OBJECTS_TABLE));
+  strbld_str(sb, "` ("
                  "`mdo_id` INT UNSIGNED NOT NULL, "
                  "`object` MEDIUMBLOB NOT NULL, "
                  "PRIMARY KEY (`mdo_id`)"
@@ -118,10 +113,8 @@ uint64_t createMDOGroupsTable(struct stored_conn_t *sconn, struct modb_t *modb)
     return (uint64_t)-1;
   }
   strbld_str(sb, "CREATE TABLE `", 0);
-  strbld_str(sb, modb->name, modb->name_len);
-  strbld_str(sb, MDO_GROUPS_TABLE, STR_LEN(MDO_GROUPS_TABLE));
-  strbld_str(sb, "` ", 2);
-  strbld_str(sb, "("
+  modbTableName_sb(sb, modb, MDO_GROUPS_TABLE, STR_LEN(MDO_GROUPS_TABLE));
+  strbld_str(sb, "` ("
                  "`mdo_id` INT UNSIGNED NOT NULL, "
                  "`group_id` INT UNSIGNED NOT NULL, "
                  "INDEX(`mdo_id`), "
@@ -148,10 +141,8 @@ uint64_t createUsersTable(struct stored_conn_t *sconn, struct modb_t *modb)
     return (uint64_t)-1;
   }
   strbld_str(sb, "CREATE TABLE `", 0);
-  strbld_str(sb, modb->name, modb->name_len);
-  strbld_str(sb, USERS_TABLE, STR_LEN(USERS_TABLE));
-  strbld_str(sb, "` ", 2);
-  strbld_str(sb, "("
+  modbTableName_sb(sb, modb, USERS_TABLE, STR_LEN(USERS_TABLE));
+  strbld_str(sb, "` ("
                  "`id` INT UNSIGNED NOT NULL, "
                  "`username` VARCHAR(255) NOT NULL, "
                  "`email` VARCHAR(255) NOT NULL, "
@@ -180,10 +171,8 @@ uint64_t createGroupsTable(struct stored_conn_t *sconn, struct modb_t *modb)
     return (uint64_t)-1;
   }
   strbld_str(sb, "CREATE TABLE `", 0);
-  strbld_str(sb, modb->name, modb->name_len);
-  strbld_str(sb, GROUPS_TABLE, STR_LEN(GROUPS_TABLE));
-  strbld_str(sb, "` ", 2);
-  strbld_str(sb, "("
+  modbTableName_sb(sb, modb, GROUPS_TABLE, STR_LEN(GROUPS_TABLE));
+  strbld_str(sb, "` ("
                  "`id` INT UNSIGNED NOT NULL, "
                  "`name` VARCHAR(255) NOT NULL, "
                  "`created` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, "
@@ -211,10 +200,8 @@ uint64_t createUserGroupsTable(struct stored_conn_t *sconn, struct modb_t *modb)
     return (uint64_t)-1;
   }
   strbld_str(sb, "CREATE TABLE `", 0);
-  strbld_str(sb, modb->name, modb->name_len);
-  strbld_str(sb, USER_GROUPS_TABLE, STR_LEN(USER_GROUPS_TABLE));
-  strbld_str(sb, "` ", 2);
-  strbld_str(sb, "("
+  modbTableName_sb(sb, modb, USER_GROUPS_TABLE, STR_LEN(USER_GROUPS_TABLE));
+  strbld_str(sb, "` ("
                  "`user_id` INT UNSIGNED NOT NULL, "
                  "`group_id` INT UNSIGNED NOT NULL, "
                  "INDEX(`user_id`), "
@@ -312,11 +299,9 @@ uint64_t createMetaExtTable(struct stored_conn_t *sconn, struct modb_t *modb,
     return (uint64_t)-1;
   }
   strbld_str(sb, "CREATE TABLE `", 0);
-  strbld_str(sb, modb->name, modb->name_len);
-  strbld_str(sb, META_EXT_TABLE, STR_LEN(META_EXT_TABLE));
-  strbld_str(sb, "` ", 2);
-  strbld_str(sb, "(", 1);
-  strbld_str(sb, "`mdo_id` INT UNSIGNED NOT NULL", 0);
+  modbTableName_sb(sb, modb, META_EXT_TABLE, STR_LEN(META_EXT_TABLE));
+  strbld_str(sb, "` ("
+                 "`mdo_id` INT UNSIGNED NOT NULL", 0);
   for (size_t c = 0; c < cols; c++) {
     struct column_data_t *col = *(col_data + c);
     if ((colstr = createColString(col)) == 0) {
@@ -349,10 +334,9 @@ int tableExists(struct stored_conn_t *sconn, struct modb_t *modb,
   if ((sb = strbld_create()) == 0) {
     return -errno;
   }
-  retval += strbld_str(sb, "SHOW TABLES LIKE '", 0);
-  retval += strbld_str(sb, modb->name, modb->name_len);
-  retval += strbld_str(sb, suffix, suffix_len);
-  retval += strbld_char(sb, '\'');
+  strbld_str(sb, "SHOW TABLES LIKE '", 0);
+  modbTableName_sb(sb, modb, suffix, suffix_len);
+  strbld_char(sb, '\'');
   if (strbld_finalize_or_destroy(&sb, &qry, &qry_len) != 0) {
     return -errno;
   }
@@ -395,9 +379,8 @@ uint64_t destroyTable(struct stored_conn_t *sconn, struct modb_t *modb,
     return (uint64_t)-1;
   }
   strbld_str(sb, "DROP TABLE `", 0);
-  strbld_str(sb, modb->name, modb->name_len);
-  strbld_str(sb, suffix, suffix_len);
-  strbld_str(sb, "` ", 2);
+  modbTableName_sb(sb, modb, suffix, suffix_len);
+  strbld_char(sb, '`');
   if (strbld_finalize_or_destroy(&sb, &qry, &qry_len) != 0) {
     return (uint64_t)-1;
   }
