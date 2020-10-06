@@ -6,6 +6,7 @@
 #include <mysql.h>
 
 #include "db_connection.h"
+#include "strext.h"
 
 enum e_column_type_t {
   TYPE_RAW        = 0 <<  0,
@@ -100,7 +101,12 @@ void freeColumns(struct column_data_t **col_data, size_t n_cols);
 
 int setColumnValue(struct column_data_t *col, uint64_t row, const char *value, size_t value_size);
 
-struct column_data_t *selectColumn(struct column_data_t **col_data, size_t n_cols,
+struct column_data_t *findColumn(struct column_data_t **col_data, size_t n_cols,
                                    const char *name);
+
+
+char *createColumn(struct column_data_t *col_data, char **str, size_t *len);
+void createColumn_sb(str_builder *sb, struct column_data_t *col);
+
 
 #endif // H__DB_COLUMN__

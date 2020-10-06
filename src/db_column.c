@@ -372,7 +372,7 @@ int setColumnValue(struct column_data_t *col, uint64_t row, const char *value, s
   return 0;
 }
 
-struct column_data_t *selectColumn(struct column_data_t **col_data, size_t n_cols, const char *name)
+struct column_data_t *findColumn(struct column_data_t **col_data, size_t n_cols, const char *name)
 {
   struct column_data_t *col = 0;
   size_t idx = 0;
@@ -387,4 +387,82 @@ struct column_data_t *selectColumn(struct column_data_t **col_data, size_t n_col
   }
 
   return 0;
+}
+
+char *createColumn(struct column_data_t *col, char **str, size_t *len)
+{
+  str_builder *sb;
+
+  if ((sb = strbld_create()) == 0) {
+    return 0;
+  }
+  createColumn_sb(sb, col);
+  if (strbld_finalize_or_destroy(&sb, str, len) != 0) {
+    return 0;
+  }
+
+  return *str;
+}
+void createColumn_sb(str_builder *sb, struct column_data_t *col)
+{
+  strbld_str(sb, ", `", 3);
+  strbld_str(sb, col->name, col->name_len);
+  strbld_str(sb, "` ", 2);
+
+  switch(col->type) {
+    case TYPE_RAW:
+      strbld_str(sb, "MEDIUMBLOB", 10);
+      break;
+    case TYPE_BOOL:
+      strbld_str(sb, "BOOLEAN", 7);
+      break;
+    case TYPE_INT8:
+    case TYPE_UINT8:
+      strbld_str(sb, "TINYINT", 7);
+      break;
+    case TYPE_INT16:
+    case TYPE_UINT16:
+      strbld_str(sb, "SMALLINT", 8);
+      break;
+    case TYPE_INT32:
+    case TYPE_UINT32:
+      strbld_str(sb, "INT", 3);
+      break;
+    case TYPE_INT64:
+    case TYPE_UINT64:
+      strbld_str(sb, "BIGINT", 6);
+      break;
+    case TYPE_FLOAT:
+      strbld_str(sb, "FLOAT", 5);
+      break;
+    case TYPE_DOUBLE:
+      strbld_str(sb, "DOUBLE", 6);
+      break;
+    case TYPE_STRING:
+      strbld_str(sb, "VARCHAR(4096)", 13);
+      break;
+    case TYPE_BLOB:
+      strbld_str(sb, "MEDIUMBLOB", 10);
+      break;
+    case TYPE_TIMESTAMP:
+      strbld_str(sb, "TIMESTAMP", 8);
+      break;
+    case TYPE_ID:
+      strbld_str(sb, "INT", 3);
+      break;
+  }
+
+  if (col->isUnsigned) {
+    strbld_str(sb, " UNSIGNED", 0);
+  }
+
+  if (col->isNullable) {
+    strbld_str(sb, " NULL", 0);
+  } else {
+    strbld_str(sb, " NOT NULL", 0);
+  }
+
+  if (col->isAutoIncrement) {
+    strbld_str(sb, " AUTO_INCREMENT", 0);
+  }
 }

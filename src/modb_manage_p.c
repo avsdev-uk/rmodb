@@ -221,82 +221,6 @@ uint64_t createUserGroupsTable(stored_conn *sconn, modb_ref *modb)
 }
 
 
-char *createColString(column_data *col)
-{
-  char *colstr;
-  size_t colstr_len;
-  str_builder *sb;
-
-  if ((sb = strbld_create()) == 0) {
-    return 0;
-  }
-  strbld_str(sb, ", `", 3);
-  strbld_str(sb, col->name, col->name_len);
-  strbld_str(sb, "` ", 2);
-
-  switch(col->type) {
-    case TYPE_RAW:
-      strbld_str(sb, "MEDIUMBLOB", 10);
-      break;
-    case TYPE_BOOL:
-      strbld_str(sb, "BOOLEAN", 7);
-      break;
-    case TYPE_INT8:
-    case TYPE_UINT8:
-      strbld_str(sb, "TINYINT", 7);
-      break;
-    case TYPE_INT16:
-    case TYPE_UINT16:
-      strbld_str(sb, "SMALLINT", 8);
-      break;
-    case TYPE_INT32:
-    case TYPE_UINT32:
-      strbld_str(sb, "INT", 3);
-      break;
-    case TYPE_INT64:
-    case TYPE_UINT64:
-      strbld_str(sb, "BIGINT", 6);
-      break;
-    case TYPE_FLOAT:
-      strbld_str(sb, "FLOAT", 5);
-      break;
-    case TYPE_DOUBLE:
-      strbld_str(sb, "DOUBLE", 6);
-      break;
-    case TYPE_STRING:
-      strbld_str(sb, "VARCHAR(4096)", 13);
-      break;
-    case TYPE_BLOB:
-      strbld_str(sb, "MEDIUMBLOB", 10);
-      break;
-    case TYPE_TIMESTAMP:
-      strbld_str(sb, "TIMESTAMP", 8);
-      break;
-    case TYPE_ID:
-      strbld_str(sb, "INT", 3);
-      break;
-  }
-
-  if (col->isUnsigned) {
-    strbld_str(sb, " UNSIGNED", 0);
-  }
-
-  if (col->isNullable) {
-    strbld_str(sb, " NULL", 0);
-  } else {
-    strbld_str(sb, " NOT NULL", 0);
-  }
-
-  if (col->isAutoIncrement) {
-    strbld_str(sb, " AUTO_INCREMENT", 0);
-  }
-
-  if (strbld_finalize_or_destroy(&sb, &colstr, &colstr_len) != 0) {
-    return 0;
-  }
-
-  return colstr;
-}
 uint64_t createMetaExtTable(stored_conn *sconn, modb_ref *modb,
                             column_data **col_data, size_t cols)
 {
@@ -304,7 +228,6 @@ uint64_t createMetaExtTable(stored_conn *sconn, modb_ref *modb,
   uint64_t res;
   size_t qry_len;
   str_builder *sb;
-  char *colstr;
 
   if ((sb = strbld_create()) == 0) {
     return (uint64_t)-1;
@@ -314,13 +237,7 @@ uint64_t createMetaExtTable(stored_conn *sconn, modb_ref *modb,
   strbld_str(sb, "` ("
                  "`mdo_id` INT UNSIGNED NOT NULL", 0);
   for (size_t c = 0; c < cols; c++) {
-    column_data *col = *(col_data + c);
-    if ((colstr = createColString(col)) == 0) {
-      strbld_destroy(&sb);
-      return (uint64_t)-1;
-    }
-    strbld_str(sb, colstr, 0);
-    free(colstr);
+    createColumn_sb(sb, *(col_data + c));
   }
   strbld_str(sb, ", INDEX (`mdo_id`))", 0);
   if (strbld_finalize_or_destroy(&sb, &qry, &qry_len) != 0) {
