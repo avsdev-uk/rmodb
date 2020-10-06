@@ -413,7 +413,7 @@ struct sconn_modb_use_t *allocUse(struct stored_conn_t *sconn, struct modb_t *mo
   memset(ptr, 0, sizeof(struct sconn_modb_use_t));
 
   ptr->sconn = sconn;
-  if (strmemcpy(modb->name, modb->name_len, &ptr->modb_name, &ptr->modb_name_len) == 0) {
+  if (strmemcpy(modb->name, modb->name_len, &ptr->modb_name, &ptr->modb_name_len) != 0) {
     fprintf(stderr, "[%d]malloc: (%d) %s\n", __LINE__, errno, strerror(errno));
     free(ptr);
     return 0;
