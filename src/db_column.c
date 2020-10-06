@@ -358,4 +358,19 @@ int setColumnValue(struct column_data_t *col, uint64_t row, const char *value, s
   return 0;
 }
 
+struct column_data_t *selectColumn(struct column_data_t **col_data, size_t n_cols, const char *name)
+{
+  struct column_data_t *col = 0;
+  size_t idx = 0;
+  size_t name_len = strlen(name);
 
+  while (idx < n_cols) {
+    col = *(col_data + idx);
+    if (col->name_len == name_len && strncmp(col->name, name, name_len) == 0) {
+      return *(col_data + idx);
+    }
+    idx++;
+  }
+
+  return 0;
+}

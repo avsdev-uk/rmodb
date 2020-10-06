@@ -97,4 +97,7 @@ void freeColumns(struct column_data_t **col_data, size_t n_cols);
 
 int setColumnValue(struct column_data_t *col, uint64_t row, const char *value, size_t value_size);
 
+struct column_data_t *selectColumn(struct column_data_t **col_data, size_t n_cols,
+                                   const char *name);
+
 #endif // H__DB_COLUMN__
