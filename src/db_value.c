@@ -139,6 +139,7 @@ void db_value_sbva(str_builder *sb, e_column_type type, uint32_t n_args, va_list
       nchar = vsprintf(buf, "%"PRIi32, args);
       break;
     }
+    case TYPE_ID:
     case TYPE_TIMESTAMP:
     case TYPE_UINT32:
     {
@@ -170,7 +171,7 @@ void db_value_sbva(str_builder *sb, e_column_type type, uint32_t n_args, va_list
 
     default:
     {
-      break;
+      return;
     }
   }
   strbld_str(sb, buf, (size_t)nchar);

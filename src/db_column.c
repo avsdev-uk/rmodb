@@ -43,6 +43,9 @@ size_t columnTypeToByteSize(e_column_type type)
     case TYPE_TIMESTAMP:
       return sizeof(uint32_t);
 
+    case TYPE_ID:
+      return sizeof(uint32_t);
+
     case TYPE_RAW:
       return sizeof(char *);
   }
@@ -155,6 +158,7 @@ struct column_data_t *initEmptyColumn(e_column_type type, int nullable, const ch
   col->isNullable  = nullable > 0;
   col->isBlob      = type == TYPE_BLOB;
   col->isTimestamp = type == TYPE_TIMESTAMP;
+  col->isAutoIncrement = type == TYPE_ID;
 
   return col;
 }
@@ -182,6 +186,8 @@ struct column_data_t *columnFromResult(struct stored_conn_t *sconn, MYSQL_RES *r
         field->table,
         field->table_length
         );
+  col->isAutoIncrement = (field->flags & AUTO_INCREMENT_FLAG) != 0;
+  col->isTimestamp = (field->flags & TIMESTAMP_FLAG) != 0;
 
   if (col == 0 || num_rows == 0) {
     return col;
@@ -344,6 +350,13 @@ int setColumnValue(struct column_data_t *col, uint64_t row, const char *value, s
       *(col->data.ptr_uint32 + row) = (uint32_t)strtoul(value, NULL, 10);
       break;
     }
+
+    case TYPE_ID:
+    {
+      *(col->data.ptr_uint32 + row) = (uint32_t)strtoul(value, NULL, 10);
+      break;
+    }
+
     case TYPE_STRING:
     case TYPE_BLOB:
     case TYPE_RAW:

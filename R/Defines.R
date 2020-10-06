@@ -28,3 +28,5 @@ TYPE_STRING     <- bitwShiftL(1, 11)
 TYPE_BLOB       <- bitwShiftL(1, 12)
 #' @export
 TYPE_TIMESTAMP  <- bitwShiftL(1, 13)
+#' @export
+TYPE_ID         <- bitwShiftL(1, 14)

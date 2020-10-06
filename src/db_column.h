@@ -22,7 +22,8 @@ enum e_column_type_t {
   TYPE_DOUBLE     = 1 << 10,
   TYPE_STRING     = 1 << 11,
   TYPE_BLOB       = 1 << 12,
-  TYPE_TIMESTAMP  = 1 << 13
+  TYPE_TIMESTAMP  = 1 << 13,
+  TYPE_ID         = 1 << 14
 };
 typedef enum e_column_type_t e_column_type;
 
@@ -38,11 +39,12 @@ struct column_data_t {
 
   size_t n_values;
 
-  uint8_t hasPointers :1;
-  uint8_t isUnsigned  :1;
-  uint8_t isNullable  :1;
-  uint8_t isBlob      :1;
-  uint8_t isTimestamp :1;
+  uint8_t hasPointers     :1;
+  uint8_t isUnsigned      :1;
+  uint8_t isNullable      :1;
+  uint8_t isBlob          :1;
+  uint8_t isTimestamp     :1;
+  uint8_t isAutoIncrement :1;
 
   union {
     void *vptr;

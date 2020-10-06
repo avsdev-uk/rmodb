@@ -268,6 +268,10 @@ char *createColString(struct column_data_t *col)
       break;
     case TYPE_TIMESTAMP:
       strbld_str(sb, "TIMESTAMP", 8);
+      break;
+    case TYPE_ID:
+      strbld_str(sb, "INT", 3);
+      break;
   }
 
   if (col->isUnsigned) {
@@ -278,6 +282,10 @@ char *createColString(struct column_data_t *col)
     strbld_str(sb, " NULL", 0);
   } else {
     strbld_str(sb, " NOT NULL", 0);
+  }
+
+  if (col->isAutoIncrement) {
+    strbld_str(sb, " AUTO_INCREMENT", 0);
   }
 
   if (strbld_finalize_or_destroy(&sb, &colstr, &colstr_len) != 0) {
