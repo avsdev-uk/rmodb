@@ -143,7 +143,7 @@ uint64_t createUsersTable(struct stored_conn_t *sconn, struct modb_t *modb)
   strbld_str(sb, "CREATE TABLE `", 0);
   modbTableName_sb(sb, modb, USERS_TABLE, STR_LEN(USERS_TABLE));
   strbld_str(sb, "` ("
-                 "`id` INT UNSIGNED NOT NULL, "
+                 "`id` INT UNSIGNED NOT NULL AUTO_INCREMENT, "
                  "`username` VARCHAR(255) NOT NULL, "
                  "`email` VARCHAR(255) NOT NULL, "
                  "`created` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, "
@@ -173,7 +173,7 @@ uint64_t createGroupsTable(struct stored_conn_t *sconn, struct modb_t *modb)
   strbld_str(sb, "CREATE TABLE `", 0);
   modbTableName_sb(sb, modb, GROUPS_TABLE, STR_LEN(GROUPS_TABLE));
   strbld_str(sb, "` ("
-                 "`id` INT UNSIGNED NOT NULL, "
+                 "`id` INT UNSIGNED NOT NULL AUTO_INCREMENT, "
                  "`name` VARCHAR(255) NOT NULL, "
                  "`created` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, "
                  "`updated` TIMESTAMP on update CURRENT_TIMESTAMP NULL DEFAULT NULL, "
