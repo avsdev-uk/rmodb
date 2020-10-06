@@ -9,7 +9,7 @@
 
 
 struct sconn_modb_use_t {
-  struct stored_conn_t *sconn;
+  stored_conn *sconn;
   char *modb_name;
   size_t modb_name_len;
 
@@ -20,7 +20,7 @@ struct sconn_modb_use_t {
 static struct sconn_modb_use_t *storedUses = 0;
 
 
-uint64_t createSysTable(struct stored_conn_t *sconn, struct modb_t *modb)
+uint64_t createSysTable(stored_conn *sconn, modb_ref *modb)
 {
   char *qry;
   uint64_t res;
@@ -46,7 +46,7 @@ uint64_t createSysTable(struct stored_conn_t *sconn, struct modb_t *modb)
 
   return res;
 }
-uint64_t createMetaTable(struct stored_conn_t *sconn, struct modb_t *modb)
+uint64_t createMetaTable(stored_conn *sconn, modb_ref *modb)
 {
   char *qry;
   uint64_t res;
@@ -76,7 +76,7 @@ uint64_t createMetaTable(struct stored_conn_t *sconn, struct modb_t *modb)
 
   return res;
 }
-uint64_t createObjectsTable(struct stored_conn_t *sconn, struct modb_t *modb)
+uint64_t createObjectsTable(stored_conn *sconn, modb_ref *modb)
 {
   char *qry;
   uint64_t res;
@@ -102,7 +102,7 @@ uint64_t createObjectsTable(struct stored_conn_t *sconn, struct modb_t *modb)
 
   return res;
 }
-uint64_t createMDOGroupsTable(struct stored_conn_t *sconn, struct modb_t *modb)
+uint64_t createMDOGroupsTable(stored_conn *sconn, modb_ref *modb)
 {
   char *qry;
   uint64_t res;
@@ -130,7 +130,7 @@ uint64_t createMDOGroupsTable(struct stored_conn_t *sconn, struct modb_t *modb)
   return res;
 }
 
-uint64_t createUsersTable(struct stored_conn_t *sconn, struct modb_t *modb)
+uint64_t createUsersTable(stored_conn *sconn, modb_ref *modb)
 {
   char *qry;
   uint64_t res;
@@ -162,7 +162,7 @@ uint64_t createUsersTable(struct stored_conn_t *sconn, struct modb_t *modb)
 
   return res;
 }
-uint64_t createGroupsTable(struct stored_conn_t *sconn, struct modb_t *modb)
+uint64_t createGroupsTable(stored_conn *sconn, modb_ref *modb)
 {
   char *qry;
   uint64_t res;
@@ -192,7 +192,7 @@ uint64_t createGroupsTable(struct stored_conn_t *sconn, struct modb_t *modb)
 
   return res;
 }
-uint64_t createUserGroupsTable(struct stored_conn_t *sconn, struct modb_t *modb)
+uint64_t createUserGroupsTable(stored_conn *sconn, modb_ref *modb)
 {
   char *qry;
   uint64_t res;
@@ -221,7 +221,7 @@ uint64_t createUserGroupsTable(struct stored_conn_t *sconn, struct modb_t *modb)
 }
 
 
-char *createColString(struct column_data_t *col)
+char *createColString(column_data *col)
 {
   char *colstr;
   size_t colstr_len;
@@ -297,8 +297,8 @@ char *createColString(struct column_data_t *col)
 
   return colstr;
 }
-uint64_t createMetaExtTable(struct stored_conn_t *sconn, struct modb_t *modb,
-                            struct column_data_t **col_data, size_t cols)
+uint64_t createMetaExtTable(stored_conn *sconn, modb_ref *modb,
+                            column_data **col_data, size_t cols)
 {
   char *qry;
   uint64_t res;
@@ -314,7 +314,7 @@ uint64_t createMetaExtTable(struct stored_conn_t *sconn, struct modb_t *modb,
   strbld_str(sb, "` ("
                  "`mdo_id` INT UNSIGNED NOT NULL", 0);
   for (size_t c = 0; c < cols; c++) {
-    struct column_data_t *col = *(col_data + c);
+    column_data *col = *(col_data + c);
     if ((colstr = createColString(col)) == 0) {
       strbld_destroy(&sb);
       return (uint64_t)-1;
@@ -334,8 +334,7 @@ uint64_t createMetaExtTable(struct stored_conn_t *sconn, struct modb_t *modb,
 }
 
 
-int tableExists(struct stored_conn_t *sconn, struct modb_t *modb,
-                const char *suffix, size_t suffix_len)
+int tableExists(stored_conn *sconn, modb_ref *modb, const char *suffix, size_t suffix_len)
 {
   char *qry, *res;
   size_t qry_len;
@@ -378,8 +377,7 @@ int tableExists(struct stored_conn_t *sconn, struct modb_t *modb,
 }
 
 
-uint64_t destroyTable(struct stored_conn_t *sconn, struct modb_t *modb,
-                      const char *suffix, size_t suffix_len)
+uint64_t destroyTable(stored_conn *sconn, modb_ref *modb, const char *suffix, size_t suffix_len)
 {
   char *qry;
   uint64_t res;
@@ -403,7 +401,7 @@ uint64_t destroyTable(struct stored_conn_t *sconn, struct modb_t *modb,
 }
 
 
-struct sconn_modb_use_t *allocUse(struct stored_conn_t *sconn, struct modb_t *modb)
+struct sconn_modb_use_t *allocUse(stored_conn *sconn, modb_ref *modb)
 {
   struct sconn_modb_use_t *ptr = 0;
   struct sconn_modb_use_t *tail;
@@ -451,7 +449,7 @@ void freeUse(struct sconn_modb_use_t *ptr)
   free(ptr);
 }
 
-int connectionUseMODB(struct stored_conn_t *sconn, struct modb_t *modb, int override)
+int connectionUseMODB(stored_conn *sconn, modb_ref *modb, int override)
 {
   struct sconn_modb_use_t *ptr = storedUses;
   char *old_name;
@@ -495,7 +493,7 @@ int connectionUseMODB(struct stored_conn_t *sconn, struct modb_t *modb, int over
 
   return 0;
 }
-int connectionGetUse(struct stored_conn_t *sconn, struct modb_t *modb)
+int connectionGetUse(stored_conn *sconn, modb_ref *modb)
 {
   struct sconn_modb_use_t *ptr = storedUses;
 
@@ -512,7 +510,7 @@ int connectionGetUse(struct stored_conn_t *sconn, struct modb_t *modb)
 
   return 0;
 }
-void connectionReleaseMODB(struct stored_conn_t *sconn)
+void connectionReleaseMODB(stored_conn *sconn)
 {
   struct sconn_modb_use_t *ptr = storedUses;
 

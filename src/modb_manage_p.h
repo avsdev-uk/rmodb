@@ -8,26 +8,24 @@
 #include "modb_types.h"
 
 
-uint64_t createSysTable(struct stored_conn_t *sconn, struct modb_t *modb);
-uint64_t createMetaTable(struct stored_conn_t *sconn, struct modb_t *modb);
-uint64_t createObjectsTable(struct stored_conn_t *sconn, struct modb_t *modb);
-uint64_t createMDOGroupsTable(struct stored_conn_t *sconn, struct modb_t *modb);
+uint64_t createSysTable(stored_conn *sconn, modb_ref *modb);
+uint64_t createMetaTable(stored_conn *sconn, modb_ref *modb);
+uint64_t createObjectsTable(stored_conn *sconn, modb_ref *modb);
+uint64_t createMDOGroupsTable(stored_conn *sconn, modb_ref *modb);
 
-uint64_t createUsersTable(struct stored_conn_t *sconn, struct modb_t *modb);
-uint64_t createGroupsTable(struct stored_conn_t *sconn, struct modb_t *modb);
-uint64_t createUserGroupsTable(struct stored_conn_t *sconn, struct modb_t *modb);
+uint64_t createUsersTable(stored_conn *sconn, modb_ref *modb);
+uint64_t createGroupsTable(stored_conn *sconn, modb_ref *modb);
+uint64_t createUserGroupsTable(stored_conn *sconn, modb_ref *modb);
 
-uint64_t createMetaExtTable(struct stored_conn_t *sconn, struct modb_t *modb,
-                            struct column_data_t **col_data, size_t cols);
+uint64_t createMetaExtTable(stored_conn *sconn, modb_ref *modb,
+                            column_data **col_data, size_t cols);
 
-int tableExists(struct stored_conn_t *sconn, struct modb_t *modb,
-                const char *suffix, size_t suffix_len);
+int tableExists(stored_conn *sconn, modb_ref *modb, const char *suffix, size_t suffix_len);
 
-uint64_t destroyTable(struct stored_conn_t *sconn, struct modb_t *modb,
-                      const char *suffix, size_t suffix_len);
+uint64_t destroyTable(stored_conn *sconn, modb_ref *modb, const char *suffix, size_t suffix_len);
 
-int connectionUseMODB(struct stored_conn_t *sconn, struct modb_t *modb, int override);
-int connectionGetUse(struct stored_conn_t *sconn, struct modb_t *modb);
-void connectionReleaseMODB(struct stored_conn_t *sconn);
+int connectionUseMODB(stored_conn *sconn, modb_ref *modb, int override);
+int connectionGetUse(stored_conn *sconn, modb_ref *modb);
+void connectionReleaseMODB(stored_conn *sconn);
 
 #endif // H__MODB_P__

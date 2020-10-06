@@ -1,7 +1,7 @@
 #include "modb_p.h"
 #include "strext.h"
 
-char *modbTableName(struct modb_t *modb, const char *suffix, size_t suffix_len)
+char *modbTableName(modb_ref *modb, const char *suffix, size_t suffix_len)
 {
   str_builder *sb;
   char *str;
@@ -20,14 +20,14 @@ char *modbTableName(struct modb_t *modb, const char *suffix, size_t suffix_len)
   return str;
 }
 
-void modbTableName_sb(str_builder *sb, struct modb_t *modb, const char *suffix, size_t suffix_len)
+void modbTableName_sb(str_builder *sb, modb_ref *modb, const char *suffix, size_t suffix_len)
 {
   strbld_str(sb, modb->name, modb->name_len);
   strbld_str(sb, suffix, suffix_len);
 }
 
 
-char *modbColumnName(struct modb_t *modb,
+char *modbColumnName(modb_ref *modb,
                      const char *table, size_t table_len,
                      const char *column, size_t column_len)
 {
@@ -47,7 +47,7 @@ char *modbColumnName(struct modb_t *modb,
 
   return str;
 }
-void modbColumnName_sb(str_builder *sb, struct modb_t *modb,
+void modbColumnName_sb(str_builder *sb, modb_ref *modb,
                        const char *table, size_t table_len,
                        const char *column, size_t column_len)
 {
@@ -62,7 +62,7 @@ void modbColumnName_sb(str_builder *sb, struct modb_t *modb,
   strbld_char(sb, '`');
 }
 
-char *modbColumnNameAs(struct modb_t *modb,
+char *modbColumnNameAs(modb_ref *modb,
                        const char *table, size_t table_len,
                        const char *column, size_t column_len,
                        const char *as_column, size_t as_column_len)
@@ -83,7 +83,7 @@ char *modbColumnNameAs(struct modb_t *modb,
 
   return str;
 }
-void modbColumnNameAs_sb(str_builder *sb, struct modb_t *modb,
+void modbColumnNameAs_sb(str_builder *sb, modb_ref *modb,
                          const char *table, size_t table_len,
                          const char *column, size_t column_len,
                          const char *as_column, size_t as_column_len)

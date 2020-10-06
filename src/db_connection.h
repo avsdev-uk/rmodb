@@ -28,6 +28,7 @@ struct stored_conn_t {
   struct stored_conn_t *prev;
   struct stored_conn_t *next;
 };
+typedef struct stored_conn_t stored_conn;
 
 // Connections are stored in a linked list, these functions provide access
 struct stored_conn_t *connectionById(int conn_id);

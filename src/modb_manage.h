@@ -6,24 +6,24 @@
 
 
 // Connection reference
-int modbUse(struct stored_conn_t *sconn, struct modb_t *modb, int override);
-int modbFindUse(struct stored_conn_t *sconn, struct modb_t *modb);
-void modbReleaseUse(struct stored_conn_t *sconn);
+int modbUse(stored_conn *sconn, modb_ref *modb, int override);
+int modbFindUse(stored_conn *sconn, modb_ref *modb);
+void modbReleaseUse(stored_conn *sconn);
 
 
 // MODB instance
-int modbCreate(struct stored_conn_t *sconn, struct modb_t *modb);
-int modbExists(struct stored_conn_t *sconn, struct modb_t *modb);
-int modbDestroy(struct stored_conn_t *sconn, struct modb_t *modb);
+int modbCreate(stored_conn *sconn, modb_ref *modb);
+int modbExists(stored_conn *sconn, modb_ref *modb);
+int modbDestroy(stored_conn *sconn, modb_ref *modb);
 
-int modbAccountingCreate(struct stored_conn_t *sconn, struct modb_t *modb);
-int modbAccountingExists(struct stored_conn_t *sconn, struct modb_t *modb);
-int modbAccountingDestroy(struct stored_conn_t *sconn, struct modb_t *modb);
+int modbAccountingCreate(stored_conn *sconn, modb_ref *modb);
+int modbAccountingExists(stored_conn *sconn, modb_ref *modb);
+int modbAccountingDestroy(stored_conn *sconn, modb_ref *modb);
 
-int modbMetaExtCreate(struct stored_conn_t *sconn, struct modb_t *modb,
-                      struct column_data_t **col_data, size_t cols);
-int modbMetaExtExists(struct stored_conn_t *sconn, struct modb_t *modb);
-int modbMetaExtDestroy(struct stored_conn_t *sconn, struct modb_t *modb);
+int modbMetaExtCreate(stored_conn *sconn, modb_ref *modb,
+                      column_data **col_data, size_t cols);
+int modbMetaExtExists(stored_conn *sconn, modb_ref *modb);
+int modbMetaExtDestroy(stored_conn *sconn, modb_ref *modb);
 
 
 #endif // H__MODB_MANAGE__

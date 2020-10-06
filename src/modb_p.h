@@ -19,21 +19,21 @@
 #define META_EXT_TABLE "_meta_ext"
 
 
-char *modbTableName(struct modb_t *modb, const char *suffix, size_t suffix_len);
-void modbTableName_sb(str_builder *sb, struct modb_t *modb, const char *suffix, size_t suffix_len);
+char *modbTableName(modb_ref *modb, const char *suffix, size_t suffix_len);
+void modbTableName_sb(str_builder *sb, modb_ref *modb, const char *suffix, size_t suffix_len);
 
-char *modbColumnName(struct modb_t *modb,
+char *modbColumnName(modb_ref *modb,
                      const char *table, size_t table_len,
                      const char *column, size_t column_len);
-void modbColumnName_sb(str_builder *sb, struct modb_t *modb,
+void modbColumnName_sb(str_builder *sb, modb_ref *modb,
                        const char *table, size_t table_len,
                        const char *column, size_t column_len);
 
-char *modbColumnNameAs(struct modb_t *modb,
+char *modbColumnNameAs(modb_ref *modb,
                        const char *table, size_t table_len,
                        const char *column, size_t column_len,
                        const char *as_column, size_t as_column_len);
-void modbColumnNameAs_sb(str_builder *sb, struct modb_t *modb,
+void modbColumnNameAs_sb(str_builder *sb, modb_ref *modb,
                          const char *table, size_t table_len,
                          const char *column, size_t column_len,
                          const char *as_column, size_t as_column_len);

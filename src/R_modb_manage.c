@@ -121,7 +121,7 @@ SEXP modb_disconnect(SEXP r_conn_ref)
 SEXP modb_exists(SEXP r_conn_ref, SEXP r_name)
 {
   struct stored_conn_t *sconn;
-  struct modb_t modb;
+  struct modb_ref_t modb;
 
   if ((sconn = getConnectionByRef(r_conn_ref)) == 0) {
     Rf_error("invalid connection reference\n");
@@ -136,7 +136,7 @@ SEXP modb_exists(SEXP r_conn_ref, SEXP r_name)
 SEXP modb_create(SEXP r_conn_ref, SEXP r_name, SEXP r_extra_meta)
 {
   struct stored_conn_t *sconn;
-  struct modb_t modb;
+  struct modb_ref_t modb;
   struct column_data_t **cols;
   size_t n_cols;
   SEXP r_col, r_col_name, r_col_type, r_col_null;
@@ -201,7 +201,7 @@ SEXP modb_create(SEXP r_conn_ref, SEXP r_name, SEXP r_extra_meta)
 SEXP modb_destroy(SEXP r_conn_ref, SEXP r_name)
 {
   struct stored_conn_t *sconn;
-  struct modb_t modb;
+  struct modb_ref_t modb;
 
   if ((sconn = getConnectionByRef(r_conn_ref)) == 0) {
     Rf_error("invalid connection reference\n");
@@ -223,7 +223,7 @@ SEXP modb_destroy(SEXP r_conn_ref, SEXP r_name)
 SEXP modb_use(SEXP r_conn_ref, SEXP r_name, SEXP r_override)
 {
   struct stored_conn_t *sconn;
-  struct modb_t modb;
+  struct modb_ref_t modb;
 
   if ((sconn = getConnectionByRef(r_conn_ref)) == 0) {
     Rf_error("invalid connection reference\n");

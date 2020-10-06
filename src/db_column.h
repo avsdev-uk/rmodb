@@ -70,6 +70,7 @@ struct column_data_t {
 
   uint8_t *nulls;
 };
+typedef struct column_data_t column_data;
 
 
 // Null column value handling - maybe convert these to macros?
