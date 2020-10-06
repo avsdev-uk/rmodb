@@ -149,7 +149,9 @@ uint64_t createUsersTable(struct stored_conn_t *sconn, struct modb_t *modb)
                  "`created` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, "
                  "`updated` TIMESTAMP on update CURRENT_TIMESTAMP NULL DEFAULT NULL, "
                  "`deleted` TIMESTAMP NULL DEFAULT NULL, "
-                 "PRIMARY KEY (`id`)"
+                 "PRIMARY KEY (`id`), "
+                 "UNIQUE(`username`), "
+                 "UNIQUE(`email`)"
                  ")", 0);
   if (strbld_finalize_or_destroy(&sb, &qry, &qry_len) != 0) {
     return (uint64_t)-1;
@@ -178,7 +180,8 @@ uint64_t createGroupsTable(struct stored_conn_t *sconn, struct modb_t *modb)
                  "`created` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, "
                  "`updated` TIMESTAMP on update CURRENT_TIMESTAMP NULL DEFAULT NULL, "
                  "`deleted` TIMESTAMP NULL DEFAULT NULL, "
-                 "PRIMARY KEY (`id`)"
+                 "PRIMARY KEY (`id`), "
+                 "UNIQUE(`name`)"
                  ")", 0);
   if (strbld_finalize_or_destroy(&sb, &qry, &qry_len) != 0) {
     return (uint64_t)-1;
