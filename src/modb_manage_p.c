@@ -469,7 +469,7 @@ int connectionUseMODB(stored_conn *sconn, modb_ref *modb, int override)
       if (override == 0) {
         fprintf(
               stderr,
-              "[%d]useMODB: Connection is already using MODB '%s'\n",
+              "[%d]connectionUseMODB: Connection is already using MODB '%s'\n",
               __LINE__, ptr->modb_name
               );
         return -1;
