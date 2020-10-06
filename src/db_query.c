@@ -11,7 +11,7 @@
 
 uint64_t simpleQuery(struct stored_conn_t *sconn, const char *qry, size_t qry_len)
 {
-#ifdef DEBUG
+#if defined DEBUG || defined SQL_DEBUG
   printf("QRY: %s\n", qry);
 #endif
 
