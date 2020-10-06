@@ -5,6 +5,7 @@
 #include <mysql.h>
 
 #include "db_column.h"
+#include "db_value.h"
 #include "strext.h"
 
 
@@ -41,7 +42,7 @@ size_t columnTypeToByteSize(e_column_type type)
       return sizeof(char *);
 
     case TYPE_TIMESTAMP:
-      return sizeof(uint32_t);
+      return sizeof(int64_t);
 
     case TYPE_ID:
       return sizeof(uint32_t);
@@ -347,7 +348,7 @@ int setColumnValue(struct column_data_t *col, uint64_t row, const char *value, s
 
     case TYPE_TIMESTAMP:
     {
-      *(col->data.ptr_uint32 + row) = (uint32_t)strtoul(value, NULL, 10);
+      *(col->data.ptr_int64 + row) = db_timestampUnix(value);
       break;
     }
 

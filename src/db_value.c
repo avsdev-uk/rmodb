@@ -5,9 +5,11 @@
 #include <stdio.h>
 #include <errno.h>
 #include <mysql.h>
+#include <time.h>
 
 #include "db_value.h"
 #include "strext.h"
+
 
 char *db_value(char **str, size_t *len, e_column_type type, uint32_t n_args, ...)
 {
@@ -55,6 +57,14 @@ void db_value_sbva(str_builder *sb, e_column_type type, uint32_t n_args, va_list
 
   if (type == TYPE_RAW) {
     strbld_str(sb, va_arg(args, char *), va_arg(args, size_t));
+    return;
+  }
+
+  if (type == TYPE_TIMESTAMP) {
+    if (db_timestampString(va_arg(args, unsigned int), &tmp_str, &tmp_len) == 0) {
+      strbld_str(sb, tmp_str, tmp_len);
+      free(tmp_str);
+    }
     return;
   }
 
@@ -139,8 +149,6 @@ void db_value_sbva(str_builder *sb, e_column_type type, uint32_t n_args, va_list
       nchar = vsprintf(buf, "%"PRIi32, args);
       break;
     }
-    case TYPE_ID:
-    case TYPE_TIMESTAMP:
     case TYPE_UINT32:
     {
       nchar = vsprintf(buf, "%"PRIu32, args);
@@ -169,10 +177,53 @@ void db_value_sbva(str_builder *sb, e_column_type type, uint32_t n_args, va_list
       break;
     }
 
+    case TYPE_ID:
+    {
+      nchar = vsprintf(buf, "%"PRIu32, args);
+      break;
+    }
+
     default:
     {
       return;
     }
   }
   strbld_str(sb, buf, (size_t)nchar);
+}
+
+
+int64_t db_timestampUnix(const char *ts_str)
+{
+  struct tm tmval;
+  time_t tunix;
+
+  memset(&tmval, 0, sizeof(struct tm));
+  if (sscanf(ts_str, "%d-%d-%d %d:%d:%d",
+         &tmval.tm_year, &tmval.tm_mon, &tmval.tm_mday,
+         &tmval.tm_hour, &tmval.tm_min, &tmval.tm_sec) != 6) {
+    return 0;
+  }
+
+  tmval.tm_mon -= 1;
+  tmval.tm_year -= 1900;
+  tmval.tm_isdst = -1;
+
+  tunix = mktime(&tmval);
+
+  return tunix;
+}
+char *db_timestampString(int64_t ts_unix, char **str, size_t *str_len)
+{
+  struct tm *tmval;
+
+  *str = (char *)malloc(20);
+  if (*str == 0) {
+    return 0;
+  }
+  memset(*str, 0, 20);
+
+  tmval = gmtime((time_t *)&ts_unix);
+  *str_len = strftime(*str, 20, "%Y-%m-%d %H:%M:%S", tmval);
+
+  return *str;
 }
