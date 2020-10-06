@@ -6,6 +6,7 @@
 #include <stdarg.h>
 
 #include "db_column.h"
+#include "strext.h"
 
 
 enum e_where_logic_t {
@@ -40,6 +41,7 @@ typedef struct where_builder_t where_builder;
 
 where_builder *createWhereBuilder(where_builder *initial_clause);
 int compileWhereBuilder(where_builder *wb, char **str, size_t *str_len);
+void compileWhereBuilder_sb(where_builder *wb, str_builder *sb);
 void destroyWhereBuilder(where_builder **wb_ptr);
 
 

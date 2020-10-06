@@ -26,23 +26,36 @@ where_builder *createWhereBuilder(where_builder *initial_clause)
 }
 int compileWhereBuilder(where_builder *wb, char **str, size_t *str_len)
 {
+  struct str_builder_t *sb;
+
+  if ((sb = strbld_create()) == 0) {
+    return -1;
+  }
+
+  compileWhereBuilder_sb(wb, sb);
+
+  return strbld_finalize_or_destroy(&sb, str, str_len);
+}
+void compileWhereBuilder_sb(where_builder *wb, str_builder *sb)
+{
   switch(wb->logic_type) {
     case CLAUSE:
     {
-      return compileWhere((where_clause *)wb, str, str_len);
+      compileWhere_sb((where_clause *)wb, sb);
+      break;
     }
     case OR:
     case AND:
     {
-      return compileLogic((where_logic *)wb, str, str_len);
+      compileLogic_sb((where_logic *)wb, sb);
+      break;
     }
     default:
     {
-      return 0;
+      break;
     }
   }
 }
-
 void destroyWhereBuilder(where_builder **wb_ptr)
 {
   where_builder *wb = finalizeWhere(*wb_ptr);

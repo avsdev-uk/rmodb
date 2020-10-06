@@ -3,7 +3,6 @@
 #include "string.h"
 
 #include "db_where-builder_p.h"
-#include "strext.h"
 
 
 where_logic *createLogic(e_where_logic type, size_t initial_size)
@@ -36,26 +35,24 @@ where_logic *createLogic(e_where_logic type, size_t initial_size)
 int compileLogic(where_logic *logic, char **str, size_t *str_len)
 {
   struct str_builder_t *sb;
-  char *tmp;
-  size_t tmp_len;
 
-  sb = strbld_create();
-  if (sb == 0) {
-    *str = 0;
-    *str_len = 0;
+  if ((sb = strbld_create()) == 0) {
     return -1;
   }
 
+  compileLogic_sb(logic, sb);
+
+  return strbld_finalize_or_destroy(&sb, str, str_len);
+}
+void compileLogic_sb(where_logic *logic, str_builder *sb)
+{
   if (logic->n_clauses == 0) {
-    return strbld_finalize_or_destroy(&sb, str, str_len);
+    return;
   }
 
   strbld_char(sb, '(');
   for (size_t i = 0; i < logic->n_clauses; i++) {
-    if (compileWhereBuilder(logic->clauses[i], &tmp, &tmp_len) == 0) {
-      strbld_str(sb, tmp, tmp_len);
-      free(tmp);
-    }
+    compileWhereBuilder_sb(logic->clauses[i], sb);
     if (i < (logic->n_clauses - 1)) {
       if (logic->logic_type == OR) {
         strbld_str(sb, " OR ", 4);
@@ -65,8 +62,6 @@ int compileLogic(where_logic *logic, char **str, size_t *str_len)
     }
   }
   strbld_char(sb, ')');
-
-  return strbld_finalize_or_destroy(&sb, str, str_len);
 }
 void freeLogic(where_logic **logic_ptr)
 {
@@ -162,12 +157,18 @@ where_clause *createWhere(const char *tbl, const char *col, e_where_op op)
 int compileWhere(where_clause *clause, char **str, size_t *str_len)
 {
   struct str_builder_t *sb;
-  size_t idx;
 
-  sb = strbld_create();
-  if (sb == 0) {
+  if ((sb = strbld_create()) == 0) {
     return -1;
   }
+
+  compileWhere_sb(clause, sb);
+
+  return strbld_finalize_or_destroy(&sb, str, str_len);
+}
+void compileWhere_sb(where_clause *clause, str_builder *sb)
+{
+  size_t idx;
 
   // Column
   if (clause->table != 0) {
@@ -231,8 +232,6 @@ int compileWhere(where_clause *clause, char **str, size_t *str_len)
     strbld_char(sb, ' ');
     strbld_char(sb, ')');
   }
-
-  return strbld_finalize_or_destroy(&sb, str, str_len);
 }
 void freeWhere(where_clause **where_ptr)
 {

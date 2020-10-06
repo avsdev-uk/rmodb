@@ -2,6 +2,7 @@
 #define H__DB_WHERE_BUILDER_P__
 
 #include "db_where-builder.h"
+#include "strext.h"
 
 #ifndef DLL_LOCAL
 #  if defined _WIN32 || defined __CYGWIN__
@@ -53,6 +54,8 @@ where_logic *createLogic(e_where_logic type, size_t initial_size);
 DLL_LOCAL
 int compileLogic(where_logic *logic, char **str, size_t *str_len);
 DLL_LOCAL
+void compileLogic_sb(where_logic *logic, str_builder *sb);
+DLL_LOCAL
 void freeLogic(where_logic **logic_ptr);
 
 DLL_LOCAL
@@ -62,6 +65,8 @@ DLL_LOCAL
 where_clause *createWhere(const char *tbl, const char *col, e_where_op op);
 DLL_LOCAL
 int compileWhere(where_clause *clause, char **str, size_t *str_len);
+DLL_LOCAL
+void compileWhere_sb(where_clause *clause, str_builder *sb);
 DLL_LOCAL
 void freeWhere(where_clause **where_ptr);
 
