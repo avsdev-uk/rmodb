@@ -130,7 +130,7 @@ SEXP modb_exists(SEXP r_conn_ref, SEXP r_name)
   modb.name = Rf_translateCharUTF8(STRING_ELT(r_name, 0));
   modb.name_len = strlen(modb.name);
 
-  return Rf_ScalarLogical(modbExists(sconn, &modb) > 0);
+  return Rf_ScalarLogical(modbExists(sconn, &modb));
 }
 
 SEXP modb_create(SEXP r_conn_ref, SEXP r_name, SEXP r_extra_meta)
@@ -148,16 +148,16 @@ SEXP modb_create(SEXP r_conn_ref, SEXP r_name, SEXP r_extra_meta)
   modb.name = Rf_translateCharUTF8(STRING_ELT(r_name, 0));
   modb.name_len = strlen(modb.name);
 
-  if (modbExists(sconn, &modb) != 0) {
+  if (modbExists(sconn, &modb)) {
     Rf_warning("an MODB instance named '%s' already exists\n", modb.name);
     return Rf_ScalarLogical(FALSE);
   }
 
-  if (modbCreate(sconn, &modb) != 0) {
+  if (!modbCreate(sconn, &modb)) {
     modb_destroy(r_conn_ref, r_name);
     Rf_error("failed to create MODB instance");
   }
-  if (modbAccountingCreate(sconn, &modb) != 0) {
+  if (!modbAccountingCreate(sconn, &modb)) {
     modb_destroy(r_conn_ref, r_name);
     Rf_error("failed to create MODB instance");
   }
@@ -187,7 +187,7 @@ SEXP modb_create(SEXP r_conn_ref, SEXP r_name, SEXP r_extra_meta)
       }
     }
 
-    if (modbMetaExtCreate(sconn, &modb, cols, n_cols) != 0) {
+    if (!modbMetaExtCreate(sconn, &modb, cols, n_cols)) {
       freeColumns(cols, n_cols);
       modb_destroy(r_conn_ref, r_name);
       Rf_error("failed to create MODB instance");
@@ -210,7 +210,7 @@ SEXP modb_destroy(SEXP r_conn_ref, SEXP r_name)
   modb.name = Rf_translateCharUTF8(STRING_ELT(r_name, 0));
   modb.name_len = strlen(modb.name);
 
-  if (modbMetaExtExists(sconn, &modb) > 0) {
+  if (modbMetaExtExists(sconn, &modb)) {
     modbMetaExtDestroy(sconn, &modb);
   }
   modbAccountingDestroy(sconn, &modb);
@@ -232,11 +232,11 @@ SEXP modb_use(SEXP r_conn_ref, SEXP r_name, SEXP r_override)
   modb.name = Rf_translateCharUTF8(STRING_ELT(r_name, 0));
   modb.name_len = strlen(modb.name);
 
-  if (modbExists(sconn, &modb) == 0) {
+  if (!modbExists(sconn, &modb)) {
     Rf_error("an MODB instance named '%s' does not exist\n", modb.name);
   }
 
-  if (modbUse(sconn, &modb, Rf_asLogical(r_override)) != 0) {
+  if (!modbUse(sconn, &modb, Rf_asLogical(r_override))) {
     return Rf_ScalarLogical(FALSE);
   }
 
