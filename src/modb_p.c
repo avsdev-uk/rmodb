@@ -25,3 +25,80 @@ void modbTableName_sb(str_builder *sb, struct modb_t *modb, const char *suffix, 
   strbld_str(sb, modb->name, modb->name_len);
   strbld_str(sb, suffix, suffix_len);
 }
+
+
+char *modbColumnName(struct modb_t *modb,
+                     const char *table, size_t table_len,
+                     const char *column, size_t column_len)
+{
+  str_builder *sb;
+  char *str;
+  size_t len;
+
+  if ((sb = strbld_create()) == 0) {
+    return 0;
+  }
+
+  modbColumnName_sb(sb, modb, table, table_len, column, column_len);
+
+  if (strbld_finalize_or_destroy(&sb, &str, &len) != 0) {
+    return 0;
+  }
+
+  return str;
+}
+void modbColumnName_sb(str_builder *sb, struct modb_t *modb,
+                       const char *table, size_t table_len,
+                       const char *column, size_t column_len)
+{
+  if (table != 0) {
+    strbld_char(sb, '`');
+    modbTableName_sb(sb, modb, table, table_len);
+    strbld_char(sb, '`');
+    strbld_char(sb, '.');
+  }
+  strbld_char(sb, '`');
+  strbld_str(sb, column, column_len);
+  strbld_char(sb, '`');
+}
+
+char *modbColumnNameAs(struct modb_t *modb,
+                       const char *table, size_t table_len,
+                       const char *column, size_t column_len,
+                       const char *as_column, size_t as_column_len)
+{
+  str_builder *sb;
+  char *str;
+  size_t len;
+
+  if ((sb = strbld_create()) == 0) {
+    return 0;
+  }
+
+  modbColumnNameAs_sb(sb, modb, table, table_len, column, column_len, as_column, as_column_len);
+
+  if (strbld_finalize_or_destroy(&sb, &str, &len) != 0) {
+    return 0;
+  }
+
+  return str;
+}
+void modbColumnNameAs_sb(str_builder *sb, struct modb_t *modb,
+                         const char *table, size_t table_len,
+                         const char *column, size_t column_len,
+                         const char *as_column, size_t as_column_len)
+{
+  if (table != 0) {
+    strbld_char(sb, '`');
+    modbTableName_sb(sb, modb, table, table_len);
+    strbld_char(sb, '`');
+    strbld_char(sb, '.');
+  }
+  strbld_char(sb, '`');
+  strbld_str(sb, column, column_len);
+  strbld_char(sb, '`');
+  strbld_str(sb, " AS ", 4);
+  strbld_char(sb, '`');
+  strbld_str(sb, as_column, as_column_len);
+  strbld_char(sb, '`');
+}
