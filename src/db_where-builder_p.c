@@ -255,7 +255,7 @@ void freeWhere(where_clause **where_ptr)
     clause->col = 0;
   }
 
-  if (clause->table) {
+  if (clause->table != 0) {
     free(clause->table);
     clause->table = 0;
   }

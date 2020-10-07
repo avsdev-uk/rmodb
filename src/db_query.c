@@ -145,12 +145,7 @@ uint64_t tableQuery(struct stored_conn_t *sconn, const char *qry, size_t qry_len
   }
 
   if (failed > 0) {
-    for (size_t c = 0; c < *n_cols; c++) {
-      if (*(col_data + c) != 0) {
-        freeColumn(*(col_data + c));
-      }
-    }
-    free(col_data);
+    freeColumns(col_data, *n_cols);
     mysql_free_result(result);
     return insertId;
   }
@@ -170,6 +165,7 @@ int scalarInt(struct stored_conn_t *sconn, const char *qry, size_t qry_len, int 
   uint64_t n_rows = tableQuery(sconn, qry, qry_len, 1, &col_data, &n_cols);
 
   if (n_rows == (uint64_t)-1) {
+    freeColumns(col_data, n_cols);
     return default_value;
   }
 
@@ -179,8 +175,7 @@ int scalarInt(struct stored_conn_t *sconn, const char *qry, size_t qry_len, int 
     }
   }
 
-  freeColumn(*col_data);
-  free(col_data);
+  freeColumns(col_data, n_cols);
 
   return default_value;
 }
@@ -202,8 +197,7 @@ unsigned int scalarUInt(struct stored_conn_t *sconn, const char *qry, size_t qry
     }
   }
 
-  freeColumn(*col_data);
-  free(col_data);
+  freeColumns(col_data, n_cols);
 
   return default_value;
 }
@@ -225,8 +219,7 @@ double scalarReal(struct stored_conn_t *sconn, const char *qry, size_t qry_len,
     }
   }
 
-  freeColumn(*col_data);
-  free(col_data);
+  freeColumns(col_data, n_cols);
 
   return default_value;
 }
@@ -247,8 +240,7 @@ char scalarChar(struct stored_conn_t *sconn, const char *qry, size_t qry_len, ch
     }
   }
 
-  freeColumn(*col_data);
-  free(col_data);
+  freeColumns(col_data, n_cols);
 
   return default_value;
 }
@@ -268,15 +260,12 @@ char *scalarString(struct stored_conn_t *sconn, const char *qry, size_t qry_len,
   if (n_rows > 0) {
     if (!((*col_data)->isNullable && columnRowIsNull(*col_data, 0))) {
       if (strmemcpy(*((*col_data)->data.ptr_str), (*col_data)->data_lens[0], &retval, &len) != 0) {
-        freeColumn(*col_data);
-        free(col_data);
-        return NULL;
+        retval = NULL;
       }
     }
   }
 
-  freeColumn(*col_data);
-  free(col_data);
+  freeColumns(col_data, n_cols);
 
   return retval;
 }
@@ -297,10 +286,10 @@ int64_t countQuery(struct stored_conn_t *sconn, const char *table, where_builder
   strbld_str(sb, "` WHERE ", 0);
   compileWhereBuilder_sb(wb, sb);
   if (strbld_finalize_or_destroy(&sb, &qry, &qry_len) != 0) {
-    free(wb);
+    destroyWhereBuilder(&wb);
     return -1;
   }
-  free(wb);
+  destroyWhereBuilder(&wb);
 
   qry_ret = scalarInt(sconn, qry, qry_len, 0);
   free(qry);
@@ -351,7 +340,7 @@ int syncIdMap(struct stored_conn_t *sconn, const char *table,
 
   wb = where(table, primary_col, EQ, TYPE_ID, 1, primary_id);
   qry_ret = deleteQuery(sconn, table, wb);
-  free(wb);
+  destroyWhereBuilder(&wb);
 
   if (qry_ret != 0) {
     return qry_ret;
@@ -422,7 +411,7 @@ int hasIdMap(struct stored_conn_t *sconn, const char *table,
         where(table, map_col, EQ, TYPE_ID, 1, map_id)
         );
   qry_ret = countQuery(sconn, table, wb);
-  free(wb);
+  destroyWhereBuilder(&wb);
 
   return qry_ret > 0;
 }
@@ -479,7 +468,7 @@ int removeIdMap(struct stored_conn_t *sconn, const char *table,
         where(table, map_col, EQ, TYPE_ID, 1, map_id)
         );
   qry_ret = deleteQuery(sconn, table, wb);
-  free(wb);
+  destroyWhereBuilder(&wb);
 
   return qry_ret;
 }

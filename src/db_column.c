@@ -259,15 +259,24 @@ void freeColumn(struct column_data_t *col)
     col->nulls = 0;
   }
 
-  free(col->name);
-  col->name = 0;
+  if (col->table) {
+    free(col->table);
+    col->table = 0;
+  }
+
+  if (col->name) {
+    free(col->name);
+    col->name = 0;
+  }
 
   free(col);
 }
 void freeColumns(struct column_data_t **col_data, size_t n_cols)
 {
   for (size_t c = 0; c < n_cols; c++) {
-    freeColumn(*(col_data + c));
+    if (*(col_data + c) != 0) {
+      freeColumn(*(col_data + c));
+    }
   }
   free(col_data);
 }
