@@ -29,7 +29,7 @@ char *scalarString(struct stored_conn_t *sconn, const char *qry, size_t qry_len,
 
 // Where query methods
 int64_t countQuery(struct stored_conn_t *sconn, const char *table, where_builder *wb);
-uint64_t deleteQuery(struct stored_conn_t *sconn, const char *table, where_builder *wb);
+int deleteQuery(struct stored_conn_t *sconn, const char *table, where_builder *wb);
 
 
 // Map helpers
