@@ -137,9 +137,9 @@ int64_t modbUserCreate(stored_conn *sconn, modb_ref *modb,
   if ((sb = strbld_create()) == 0) {
     return -1;
   }
-  strbld_str(sb, "INSERT INTO `", 0);
-  modbTableName_sb(sb, modb, USERS_TABLE, strlen(USERS_TABLE));
-  strbld_str(sb, "` (`id`, `username`, `email`) VALUES(", 0);
+  strbld_str(sb, "INSERT INTO ", 0);
+  modbTableName_sb(sb, modb, USERS_TABLE, strlen(USERS_TABLE), '`');
+  strbld_str(sb, " (`id`, `username`, `email`) VALUES(", 0);
   db_value_sb(sb, TYPE_UINT32, 1, id);
   strbld_str(sb, ", ", 0);
   db_value_sb(sb, TYPE_STRING, 1, user_name);
@@ -166,9 +166,9 @@ int64_t modbUserUpdate(stored_conn *sconn, modb_ref *modb, unsigned int id,
   if ((sb = strbld_create()) == 0) {
     return 0;
   }
-  strbld_str(sb, "UPDATE `", 0);
-  modbTableName_sb(sb, modb, USERS_TABLE, strlen(USERS_TABLE));
-  strbld_str(sb, "` SET `id` = ", 0);
+  strbld_str(sb, "UPDATE ", 0);
+  modbTableName_sb(sb, modb, USERS_TABLE, strlen(USERS_TABLE), '`');
+  strbld_str(sb, " SET `id` = ", 0);
   db_value_sb(sb, TYPE_UINT32, 1, id);
 
   if (username != 0) {
@@ -206,9 +206,9 @@ int modbUserDelete(stored_conn *sconn, modb_ref *modb, int id)
   if ((sb = strbld_create()) == 0) {
     return 0;
   }
-  strbld_str(sb, "UPDATE `", 0);
-  modbTableName_sb(sb, modb, USERS_TABLE, strlen(USERS_TABLE));
-  strbld_str(sb, "` SET `deleted` = CURRENT_TIMESTAMP() WHERE `id` = ", 0);
+  strbld_str(sb, "UPDATE`", 0);
+  modbTableName_sb(sb, modb, USERS_TABLE, strlen(USERS_TABLE), '`');
+  strbld_str(sb, " SET `deleted` = CURRENT_TIMESTAMP() WHERE `id` = ", 0);
   db_value_sb(sb, TYPE_UINT32, 1, id);
   if (strbld_finalize_or_destroy(&sb, &qry, &qry_len) != 0) {
     return 0;
@@ -234,9 +234,9 @@ int modbUserDestroy(stored_conn *sconn, modb_ref *modb, int id)
   if ((sb = strbld_create()) == 0) {
     return 0;
   }
-  strbld_str(sb, "DELETE FROM `", 0);
-  modbTableName_sb(sb, modb, USERS_TABLE, strlen(USERS_TABLE));
-  strbld_str(sb, "` WHERE `id` = ", 0);
+  strbld_str(sb, "DELETE FROM ", 0);
+  modbTableName_sb(sb, modb, USERS_TABLE, strlen(USERS_TABLE), '`');
+  strbld_str(sb, " WHERE `id` = ", 0);
   db_value_sb(sb, TYPE_UINT32, 1, id);
   if (strbld_finalize_or_destroy(&sb, &qry, &qry_len) != 0) {
     return 0;
@@ -343,9 +343,9 @@ int64_t modbGroupCreate(stored_conn *sconn, modb_ref *modb,
   if ((sb = strbld_create()) == 0) {
     return -1;
   }
-  strbld_str(sb, "INSERT INTO `", 0);
-  modbTableName_sb(sb, modb, GROUPS_TABLE, strlen(GROUPS_TABLE));
-  strbld_str(sb, "` (`id`, `name`) VALUES(", 0);
+  strbld_str(sb, "INSERT INTO`", 0);
+  modbTableName_sb(sb, modb, GROUPS_TABLE, strlen(GROUPS_TABLE), '`');
+  strbld_str(sb, " (`id`, `name`) VALUES(", 0);
   db_value_sb(sb, TYPE_UINT32, 1, id);
   strbld_str(sb, ", ", 0);
   db_value_sb(sb, TYPE_STRING, 1, name);
@@ -370,9 +370,9 @@ int64_t modbGroupUpdate(stored_conn *sconn, modb_ref *modb, unsigned int id,
   if ((sb = strbld_create()) == 0) {
     return 0;
   }
-  strbld_str(sb, "UPDATE `", 0);
-  modbTableName_sb(sb, modb, GROUPS_TABLE, strlen(GROUPS_TABLE));
-  strbld_str(sb, "` SET `id` = ", 0);
+  strbld_str(sb, "UPDATE ", 0);
+  modbTableName_sb(sb, modb, GROUPS_TABLE, strlen(GROUPS_TABLE), '`');
+  strbld_str(sb, " SET `id` = ", 0);
   db_value_sb(sb, TYPE_UINT32, 1, id);
 
   if (name == 0) {
@@ -407,9 +407,9 @@ int modbGroupDelete(stored_conn *sconn, modb_ref *modb, int id)
   if ((sb = strbld_create()) == 0) {
     return 0;
   }
-  strbld_str(sb, "UPDATE `", 0);
-  modbTableName_sb(sb, modb, GROUPS_TABLE, strlen(GROUPS_TABLE));
-  strbld_str(sb, "` SET `deleted` = CURRENT_TIMESTAMP() WHERE `id` = ", 0);
+  strbld_str(sb, "UPDATE ", 0);
+  modbTableName_sb(sb, modb, GROUPS_TABLE, strlen(GROUPS_TABLE), '`');
+  strbld_str(sb, " SET `deleted` = CURRENT_TIMESTAMP() WHERE `id` = ", 0);
   db_value_sb(sb, TYPE_UINT32, 1, id);
   if (strbld_finalize_or_destroy(&sb, &qry, &qry_len) != 0) {
     return 0;
@@ -435,9 +435,9 @@ int modbGroupDestroy(stored_conn *sconn, modb_ref *modb, int id)
   if ((sb = strbld_create()) == 0) {
     return 0;
   }
-  strbld_str(sb, "DELETE FROM `", 0);
-  modbTableName_sb(sb, modb, GROUPS_TABLE, strlen(GROUPS_TABLE));
-  strbld_str(sb, "` WHERE `id` = ", 0);
+  strbld_str(sb, "DELETE FROM ", 0);
+  modbTableName_sb(sb, modb, GROUPS_TABLE, strlen(GROUPS_TABLE), '`');
+  strbld_str(sb, " WHERE `id` = ", 0);
   db_value_sb(sb, TYPE_UINT32, 1, id);
   if (strbld_finalize_or_destroy(&sb, &qry, &qry_len) != 0) {
     return 0;
@@ -463,7 +463,7 @@ int modbSyncGroupsUser(stored_conn *sconn, modb_ref *modb,
   int qry_ret;
   char *table;
 
-  if ((table = modbTableName(modb, USER_GROUPS_TABLE, STR_LEN(USER_GROUPS_TABLE))) == 0) {
+  if ((table = modbTableName(modb, USER_GROUPS_TABLE, STR_LEN(USER_GROUPS_TABLE), 0)) == 0) {
     return 0;
   }
 
@@ -479,7 +479,7 @@ int modbSyncUserGroups_va(stored_conn *sconn, modb_ref *modb,
   int qry_ret;
   char *table;
 
-  if ((table = modbTableName(modb, USER_GROUPS_TABLE, STR_LEN(USER_GROUPS_TABLE))) == 0) {
+  if ((table = modbTableName(modb, USER_GROUPS_TABLE, STR_LEN(USER_GROUPS_TABLE), 0)) == 0) {
     return 0;
   }
 
@@ -497,7 +497,7 @@ int modbSyncGroupUsers(stored_conn *sconn, modb_ref *modb,
   int qry_ret;
   char *table;
 
-  if ((table = modbTableName(modb, USER_GROUPS_TABLE, STR_LEN(USER_GROUPS_TABLE))) == 0) {
+  if ((table = modbTableName(modb, USER_GROUPS_TABLE, STR_LEN(USER_GROUPS_TABLE), 0)) == 0) {
     return 0;
   }
 
@@ -513,7 +513,7 @@ int modbSyncGroupUsers_va(stored_conn *sconn, modb_ref *modb,
   int qry_ret;
   char *table;
 
-  if ((table = modbTableName(modb, USER_GROUPS_TABLE, STR_LEN(USER_GROUPS_TABLE))) == 0) {
+  if ((table = modbTableName(modb, USER_GROUPS_TABLE, STR_LEN(USER_GROUPS_TABLE), 0)) == 0) {
     return 0;
   }
 
@@ -545,16 +545,16 @@ int modbFetchUserGroupIds(stored_conn *sconn, modb_ref *modb, int with_deleted,
   if ((sb = strbld_create()) == 0) {
     return -errno;
   }
-  strbld_str(sb, "SELECT `group_id` FROM `", 0);
-  modbTableName_sb(sb, modb, USER_GROUPS_TABLE, strlen(USER_GROUPS_TABLE));
-  strbld_str(sb, "` ", 2);
+  strbld_str(sb, "SELECT `group_id` FROM ", 0);
+  modbTableName_sb(sb, modb, USER_GROUPS_TABLE, strlen(USER_GROUPS_TABLE), '`');
+  strbld_char(sb, ' ');
   modbJoin_sb(sb, modb, "LEFT", 4, 1,
               GROUPS_TABLE, strlen(GROUPS_TABLE), "id", 2,
               USER_GROUPS_TABLE, STR_LEN(USER_GROUPS_TABLE), "group_id", 8);
   strbld_str(sb, " WHERE ", 0);
   wb = where(0, "user_id", EQ, TYPE_ID, 1, user_id);
   if (!with_deleted) {
-    table = modbTableName(modb, GROUPS_TABLE, STR_LEN(GROUPS_TABLE));
+    table = modbTableName(modb, GROUPS_TABLE, STR_LEN(GROUPS_TABLE), 0);
     wb = whereAnd(wb, where(table, "deleted", IS_NULL, TYPE_RAW, 0));
     free(table);
   }
@@ -603,16 +603,16 @@ int modbFetchGroupUserIds(stored_conn *sconn, modb_ref *modb, int with_deleted,
   if ((sb = strbld_create()) == 0) {
     return -errno;
   }
-  strbld_str(sb, "SELECT `user_id` FROM `", 0);
-  modbTableName_sb(sb, modb, USER_GROUPS_TABLE, strlen(USER_GROUPS_TABLE));
-  strbld_str(sb, "` ", 2);
+  strbld_str(sb, "SELECT `user_id` FROM ", 0);
+  modbTableName_sb(sb, modb, USER_GROUPS_TABLE, strlen(USER_GROUPS_TABLE), '`');
+  strbld_char(sb, ' ');
   modbJoin_sb(sb, modb, "LEFT", 4, 1,
               USERS_TABLE, strlen(USERS_TABLE), "id", 2,
               USER_GROUPS_TABLE, STR_LEN(USER_GROUPS_TABLE), "user_id", 8);
   strbld_str(sb, " WHERE ", 0);
   wb = where(0, "group_id", EQ, TYPE_ID, 1, group_id);
   if (!with_deleted) {
-    table = modbTableName(modb, USERS_TABLE, STR_LEN(USERS_TABLE));
+    table = modbTableName(modb, USERS_TABLE, STR_LEN(USERS_TABLE), 0);
     wb = whereAnd(wb, where(table, "deleted", IS_NULL, TYPE_RAW, 0));
     free(table);
   }
@@ -709,7 +709,7 @@ int modbIsLinked_Group_User(stored_conn *sconn, modb_ref *modb,
   int qry_ret;
   char *table;
 
-  if ((table = modbTableName(modb, USER_GROUPS_TABLE, STR_LEN(USER_GROUPS_TABLE))) == 0) {
+  if ((table = modbTableName(modb, USER_GROUPS_TABLE, STR_LEN(USER_GROUPS_TABLE), 0)) == 0) {
     return 0;
   }
 
@@ -724,7 +724,7 @@ int modbLink_Group_User(stored_conn *sconn, modb_ref *modb,
   int qry_ret;
   char *table;
 
-  if ((table = modbTableName(modb, USER_GROUPS_TABLE, STR_LEN(USER_GROUPS_TABLE))) == 0) {
+  if ((table = modbTableName(modb, USER_GROUPS_TABLE, STR_LEN(USER_GROUPS_TABLE), 0)) == 0) {
     return 0;
   }
 
@@ -739,7 +739,7 @@ int modbUnlink_Group_User(stored_conn *sconn, modb_ref *modb,
   int qry_ret;
   char *table;
 
-  if ((table = modbTableName(modb, USER_GROUPS_TABLE, STR_LEN(USER_GROUPS_TABLE))) == 0) {
+  if ((table = modbTableName(modb, USER_GROUPS_TABLE, STR_LEN(USER_GROUPS_TABLE), 0)) == 0) {
     return 0;
   }
 

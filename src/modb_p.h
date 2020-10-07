@@ -19,8 +19,9 @@
 #define META_EXT_TABLE "_meta_ext"
 
 
-char *modbTableName(modb_ref *modb, const char *suffix, size_t suffix_len);
-void modbTableName_sb(str_builder *sb, modb_ref *modb, const char *suffix, size_t suffix_len);
+char *modbTableName(modb_ref *modb, const char *suffix, size_t suffix_len, char encap);
+void modbTableName_sb(str_builder *sb, modb_ref *modb, const char *suffix, size_t suffix_len,
+                      char encap);
 
 char *modbJoin(modb_ref *modb,
                const char *join, size_t join_len, int equals,

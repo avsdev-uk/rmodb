@@ -1,7 +1,7 @@
 #include "modb_p.h"
 #include "strext.h"
 
-char *modbTableName(modb_ref *modb, const char *suffix, size_t suffix_len)
+char *modbTableName(modb_ref *modb, const char *suffix, size_t suffix_len, char encap)
 {
   str_builder *sb;
   char *str;
@@ -11,7 +11,7 @@ char *modbTableName(modb_ref *modb, const char *suffix, size_t suffix_len)
     return 0;
   }
 
-  modbTableName_sb(sb, modb, suffix, suffix_len);
+  modbTableName_sb(sb, modb, suffix, suffix_len, encap);
 
   if (strbld_finalize_or_destroy(&sb, &str, &len) != 0) {
     return 0;
@@ -20,10 +20,17 @@ char *modbTableName(modb_ref *modb, const char *suffix, size_t suffix_len)
   return str;
 }
 
-void modbTableName_sb(str_builder *sb, modb_ref *modb, const char *suffix, size_t suffix_len)
+void modbTableName_sb(str_builder *sb, modb_ref *modb, const char *suffix, size_t suffix_len,
+                      char encap)
 {
+  if (encap != 0) {
+    strbld_char(sb, encap);
+  }
   strbld_str(sb, modb->name, modb->name_len);
   strbld_str(sb, suffix, suffix_len);
+  if (encap != 0) {
+    strbld_char(sb, encap);
+  }
 }
 
 
@@ -58,10 +65,10 @@ void modbJoin_sb(str_builder *sb, modb_ref *modb,
 {
   strbld_str(sb, join, join_len);
   strbld_str(sb, " JOIN ", 6);
-  modbTableName_sb(sb, modb, tableA, tableA_len);
+  modbTableName_sb(sb, modb, tableA, tableA_len, '`');
   strbld_str(sb, " ON ", 4);
   modbColumnName_sb(sb, modb, tableA, tableA_len, colA, colA_len);
-  strbld_str(sb, equals ? "  = " : " != ", 4);
+  strbld_str(sb, (equals ? " = " : " != "), (equals ? 3 : 4));
   modbColumnName_sb(sb, modb, tableB, tableB_len, colB, colB_len);
 }
 
@@ -91,9 +98,7 @@ void modbColumnName_sb(str_builder *sb, modb_ref *modb,
                        const char *column, size_t column_len)
 {
   if (table != 0) {
-    strbld_char(sb, '`');
-    modbTableName_sb(sb, modb, table, table_len);
-    strbld_char(sb, '`');
+    modbTableName_sb(sb, modb, table, table_len, '`');
     strbld_char(sb, '.');
   }
   strbld_char(sb, '`');
@@ -128,9 +133,7 @@ void modbColumnNameAs_sb(str_builder *sb, modb_ref *modb,
                          const char *as_column, size_t as_column_len)
 {
   if (table != 0) {
-    strbld_char(sb, '`');
-    modbTableName_sb(sb, modb, table, table_len);
-    strbld_char(sb, '`');
+    modbTableName_sb(sb, modb, table, table_len, '`');
     strbld_char(sb, '.');
   }
   strbld_char(sb, '`');

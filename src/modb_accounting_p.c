@@ -83,9 +83,8 @@ int doUsersQuery(stored_conn *sconn, modb_ref *modb, where_builder *wb,
   if ((sb = strbld_create()) == 0) {
     return -errno;
   }
-  strbld_str(sb, "SELECT * FROM `", 0);
-  modbTableName_sb(sb, modb, USERS_TABLE, strlen(USERS_TABLE));
-  strbld_char(sb, '`');
+  strbld_str(sb, "SELECT * FROM ", 0);
+  modbTableName_sb(sb, modb, USERS_TABLE, strlen(USERS_TABLE), '`');
   if (wb != 0) {
     strbld_str(sb, " WHERE ", 0);
     compileWhereBuilder_sb(wb, sb, 0);
@@ -207,9 +206,8 @@ int doGroupsQuery(stored_conn *sconn, modb_ref *modb, where_builder *wb,
   if ((sb = strbld_create()) == 0) {
     return -1;
   }
-  strbld_str(sb, "SELECT * FROM `", 0);
-  modbTableName_sb(sb, modb, GROUPS_TABLE, strlen(GROUPS_TABLE));
-  strbld_char(sb, '`');
+  strbld_str(sb, "SELECT * FROM ", 0);
+  modbTableName_sb(sb, modb, GROUPS_TABLE, strlen(GROUPS_TABLE), '`');
   if (wb != 0) {
     strbld_str(sb, " WHERE ", 0);
     compileWhereBuilder_sb(wb, sb, 0);
