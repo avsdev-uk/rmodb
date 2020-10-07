@@ -56,7 +56,9 @@ void db_value_sbva(str_builder *sb, e_column_type type, uint32_t n_args, va_list
   }
 
   if (type == TYPE_RAW) {
-    strbld_str(sb, va_arg(args, char *), va_arg(args, size_t));
+    tmp_str = va_arg(args, char *);
+    tmp_len = va_arg(args, size_t);
+    strbld_str(sb, tmp_str, tmp_len);
     return;
   }
 
@@ -113,7 +115,6 @@ void db_value_sbva(str_builder *sb, e_column_type type, uint32_t n_args, va_list
       strbld_str(sb, "NULL", 4);
       return;
     }
-
     tmp_len = va_arg(args, size_t);
 
     esc_str = (char *)malloc(tmp_len * 2 + 1 + 2);
@@ -121,11 +122,12 @@ void db_value_sbva(str_builder *sb, e_column_type type, uint32_t n_args, va_list
       fprintf(stderr, "[%d]malloc: (%d) %s\n", __LINE__, errno, strerror(errno));
       return;
     }
-
     esc_str[0] = '0';
     esc_str[1] = 'x';
     esc_len = mysql_hex_string(esc_str + 2, tmp_str, tmp_len);
+
     strbld_str(sb, esc_str, esc_len);
+
     free(esc_str);
     return;
   }
