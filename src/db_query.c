@@ -4,6 +4,7 @@
 #include <string.h>
 #include <mysql.h>
 
+#include "db_query.h"
 #include "db_connection.h"
 #include "db_column.h"
 #include "db_value.h"
@@ -305,7 +306,40 @@ int64_t countQuery(struct stored_conn_t *sconn, const char *table, where_builder
 
   return qry_ret;
 }
+int softDeleteByIdQuery(struct stored_conn_t *sconn,
+                        const char *table, const char *col, unsigned int id)
+{
+  str_builder *sb;
+  char *qry;
+  size_t qry_len;
+  uint64_t qry_ret;
 
+  if ((sb = strbld_create()) == 0) {
+    return 0;
+  }
+  strbld_str(sb, "UPDATE `", 0);
+  strbld_str(sb, table, 0);
+  strbld_str(sb, "` SET `deleted` = CURRENT_TIMESTAMP() WHERE ", 0);
+  compileWhereBuilder_sb(where(0, col, EQ, TYPE_ID, 1, id), sb, 1);
+  if (strbld_finalize_or_destroy(&sb, &qry, &qry_len) != 0) {
+    return 0;
+  }
+
+  qry_ret = simpleQuery(sconn, qry, qry_len);
+  free(qry);
+
+  // Query failed
+  if (qry_ret == (uint64_t)-1) {
+    return 0;
+  }
+
+  return 1;
+}
+int deleteByIdQuery(struct stored_conn_t *sconn,
+                    const char *table, const char *col, unsigned int id)
+{
+  return deleteQuery(sconn, table, where(0, col, EQ, TYPE_ID, 1, id));
+}
 int deleteQuery(struct stored_conn_t *sconn, const char *table, where_builder *wb)
 {
   str_builder *sb;
@@ -335,7 +369,6 @@ int deleteQuery(struct stored_conn_t *sconn, const char *table, where_builder *w
 }
 
 
-
 int syncIdMap(struct stored_conn_t *sconn, const char *table,
               const char *primary_col, const char *map_col,
               unsigned int primary_id, size_t n_maps, unsigned int *map_ids)
@@ -346,11 +379,7 @@ int syncIdMap(struct stored_conn_t *sconn, const char *table,
   int qry_ret;
   size_t idx;
 
-  qry_ret = deleteQuery(
-        sconn, table,
-        where(0, primary_col, EQ, TYPE_ID, 1, primary_id)
-        );
-
+  qry_ret = deleteByIdQuery(sconn, table, primary_col, primary_id);
   if (qry_ret != 1) {
     return qry_ret;
   }
