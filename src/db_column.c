@@ -368,12 +368,22 @@ int setColumnValue(struct column_data_t *col, uint64_t row, const char *value, s
     }
 
     case TYPE_STRING:
-    case TYPE_BLOB:
-    case TYPE_RAW:
     {
       if (strmemcpy(value, value_size, (col->data.ptr_str + row), (col->data_lens + row)) != 0) {
         return -1;
       }
+      break;
+    }
+
+    case TYPE_BLOB:
+    case TYPE_RAW:
+    {
+      *(col->data.ptr_str + row) = (char *)malloc(value_size);
+      if (*(col->data.ptr_str + row) == 0) {
+        fprintf(stderr, "[%d]malloc: (%d) %s\n", __LINE__, errno, strerror(errno));
+        return -errno;
+      }
+      memcpy(*(col->data.ptr_str + row), value, value_size);
       break;
     }
   }

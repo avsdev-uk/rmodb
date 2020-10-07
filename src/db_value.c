@@ -68,39 +68,32 @@ void db_value_sbva(str_builder *sb, e_column_type type, uint32_t n_args, va_list
     return;
   }
 
-  if (type == TYPE_STRING)
-  {
-      tmp_str = va_arg(args, char *);
-      if (n_args == 1) {
-        tmp_len = strlen(tmp_str);
-      } else {
-        tmp_len = va_arg(args, size_t);
-      }
-  }
-  if (type == TYPE_BLOB || type == TYPE_STRING) {
+  if (type == TYPE_STRING) {
+    tmp_str = va_arg(args, char *);
     if (tmp_str == 0) {
-      tmp_str = (char *)va_arg(args, void *);
+      strbld_str(sb, "NULL", 4);
+      return;
+    }
+
+    if (n_args == 1) {
+      tmp_len = strlen(tmp_str);
+    } else {
       tmp_len = va_arg(args, size_t);
     }
 
-    if (tmp_str == 0) {
-      strbld_str(sb, "NULL", 4);
+
+    esc_str = (char *)malloc(tmp_len * 2 + 1 + 2);
+    if (esc_str == 0) {
+      fprintf(stderr, "[%d]malloc: (%d) %s\n", __LINE__, errno, strerror(errno));
       return;
     }
 
     sql = mysql_init(NULL);
     if (sql == 0) {
       fprintf(stderr, "[%d]mysql_init: (%d) %s\n", __LINE__, errno, strerror(errno));
+      free(esc_str);
       return;
     }
-
-    esc_str = (char *)malloc(tmp_len * 2 + 1 + 2);
-    if (esc_str == 0) {
-      fprintf(stderr, "[%d]malloc: (%d) %s\n", __LINE__, errno, strerror(errno));
-      mysql_close(sql);
-      return;
-    }
-
     esc_str[0] = '\'';
     esc_len = mysql_real_escape_string(sql, esc_str + 1, tmp_str, tmp_len);
     esc_str[esc_len + 1] = '\'';
@@ -110,6 +103,27 @@ void db_value_sbva(str_builder *sb, e_column_type type, uint32_t n_args, va_list
 
     strbld_str(sb, esc_str, esc_len);
 
+    free(esc_str);
+    return;
+  }
+
+  if (type == TYPE_BLOB) {
+    tmp_str = (char *)va_arg(args, void *);
+    if (tmp_str == 0) {
+      strbld_str(sb, "NULL", 4);
+      return;
+    }
+
+    tmp_len = va_arg(args, size_t);
+
+    esc_str = (char *)malloc(tmp_len * 2 + 1);
+    if (esc_str == 0) {
+      fprintf(stderr, "[%d]malloc: (%d) %s\n", __LINE__, errno, strerror(errno));
+      return;
+    }
+
+    esc_len = mysql_hex_string(esc_str, tmp_str, tmp_len);
+    strbld_str(sb, esc_str, esc_len);
     free(esc_str);
     return;
   }
