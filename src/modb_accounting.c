@@ -17,7 +17,7 @@ int modbUserById(stored_conn *sconn, modb_ref *modb, unsigned int id, int with_g
   res = doScalarUsersQuery(sconn, modb, wb, user);
   freeWhereBuilder(&wb);
 
-  if (with_groups) {
+  if (res > 0 && with_groups) {
     if (modbFetchUserGroups(
           sconn, modb, 0, (*user)->id, &(*user)->n_groups, &(*user)->groups
           ) < 0) {
@@ -38,7 +38,7 @@ int modbUserByName(stored_conn *sconn, modb_ref *modb, const char *username, int
   res = doScalarUsersQuery(sconn, modb, wb, user);
   freeWhereBuilder(&wb);
 
-  if (with_groups) {
+  if (res > 0 && with_groups) {
     if (modbFetchUserGroups(
           sconn, modb, 0, (*user)->id, &(*user)->n_groups, &(*user)->groups
           ) < 0) {
@@ -59,7 +59,7 @@ int modbUserByEmail(stored_conn *sconn, modb_ref *modb, const char *email, int w
   res = doScalarUsersQuery(sconn, modb, wb, user);
   freeWhereBuilder(&wb);
 
-  if (with_groups) {
+  if (res > 0 && with_groups) {
     if (modbFetchUserGroups(
           sconn, modb, 0, (*user)->id, &(*user)->n_groups, &(*user)->groups
           ) < 0) {
@@ -83,7 +83,7 @@ int modbUserSearch(stored_conn *sconn, modb_ref *modb, const char *username_emai
   res = doScalarUsersQuery(sconn, modb, wb, user);
   freeWhereBuilder(&wb);
 
-  if (with_groups) {
+  if (res > 0 && with_groups) {
     if (modbFetchUserGroups(
           sconn, modb, 0, (*user)->id, &(*user)->n_groups, &(*user)->groups
           ) < 0) {
@@ -111,7 +111,7 @@ int modbUserList(stored_conn *sconn, modb_ref *modb, int with_deleted, int with_
     freeWhereBuilder(&wb);
   }
 
-  if (with_groups) {
+  if (res > 0 && with_groups) {
     for (idx = 0; idx < *n_users; idx++) {
       user = *((*users) + idx);
       if (modbFetchUserGroups(
@@ -266,7 +266,7 @@ int modbGroupById(stored_conn *sconn, modb_ref *modb, unsigned int id, int with_
   res = doScalarGroupsQuery(sconn, modb, wb, group);
   freeWhereBuilder(&wb);
 
-  if (with_members) {
+  if (res > 0 && with_members) {
     if (modbFetchGroupUsers(
           sconn, modb, 0, (*group)->id, &(*group)->n_members, &(*group)->members
           ) < 0) {
@@ -287,7 +287,7 @@ int modbGroupByName(stored_conn *sconn, modb_ref *modb, const char *name, int wi
   res = doScalarGroupsQuery(sconn, modb, wb, group);
   freeWhereBuilder(&wb);
 
-  if (with_members) {
+  if (res > 0 && with_members) {
     if (modbFetchGroupUsers(
           sconn, modb, 0, (*group)->id, &(*group)->n_members, &(*group)->members
           ) < 0) {
@@ -315,7 +315,7 @@ int modbGroupList(stored_conn *sconn, modb_ref *modb, int with_deleted, int with
     freeWhereBuilder(&wb);
   }
 
-  if (with_members) {
+  if (res > 0 && with_members) {
     for (idx = 0; idx < *n_groups; idx++) {
       group = *((*groups) + idx);
       if (modbFetchGroupUsers(
