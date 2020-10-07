@@ -22,6 +22,15 @@
 char *modbTableName(modb_ref *modb, const char *suffix, size_t suffix_len);
 void modbTableName_sb(str_builder *sb, modb_ref *modb, const char *suffix, size_t suffix_len);
 
+char *modbJoin(modb_ref *modb,
+               const char *join, size_t join_len, int equals,
+               const char *tableA, size_t tableA_len, const char *colA, size_t colA_len,
+               const char *tableB, size_t tableB_len, const char *colB, size_t colB_len);
+void modbJoin_sb(str_builder *sb, modb_ref *modb,
+                 const char *join, size_t join_len, int equals,
+                 const char *tableA, size_t tableA_len, const char *colA, size_t colA_len,
+                 const char *tableB, size_t tableB_len, const char *colB, size_t colB_len);
+
 char *modbColumnName(modb_ref *modb,
                      const char *table, size_t table_len,
                      const char *column, size_t column_len);

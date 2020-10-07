@@ -27,6 +27,45 @@ void modbTableName_sb(str_builder *sb, modb_ref *modb, const char *suffix, size_
 }
 
 
+char *modbJoin(modb_ref *modb,
+              const char *join, size_t join_len, int equals,
+              const char *tableA, size_t tableA_len, const char *colA, size_t colA_len,
+              const char *tableB, size_t tableB_len, const char *colB, size_t colB_len)
+{
+  str_builder *sb;
+  char *str;
+  size_t len;
+
+  if ((sb = strbld_create()) == 0) {
+    return 0;
+  }
+
+  modbJoin_sb(sb, modb,
+              join, join_len, equals,
+              tableA, tableA_len, colA, colA_len,
+              tableB, tableB_len, colB, colB_len);
+
+  if (strbld_finalize_or_destroy(&sb, &str, &len) != 0) {
+    return 0;
+  }
+
+  return str;
+}
+void modbJoin_sb(str_builder *sb, modb_ref *modb,
+                 const char *join, size_t join_len, int equals,
+                 const char *tableA, size_t tableA_len, const char *colA, size_t colA_len,
+                 const char *tableB, size_t tableB_len, const char *colB, size_t colB_len)
+{
+  strbld_str(sb, join, join_len);
+  strbld_str(sb, " JOIN ", 6);
+  modbTableName_sb(sb, modb, tableA, tableA_len);
+  strbld_str(sb, " ON ", 4);
+  modbColumnName_sb(sb, modb, tableA, tableA_len, colA, colA_len);
+  strbld_str(sb, equals ? "  = " : " != ", 4);
+  modbColumnName_sb(sb, modb, tableB, tableB_len, colB, colB_len);
+}
+
+
 char *modbColumnName(modb_ref *modb,
                      const char *table, size_t table_len,
                      const char *column, size_t column_len)
