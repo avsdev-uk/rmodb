@@ -338,11 +338,11 @@ int syncIdMap(struct stored_conn_t *sconn, const char *table,
   int qry_ret;
   size_t idx;
 
-  wb = where(table, primary_col, EQ, TYPE_ID, 1, primary_id);
+  wb = where(0, primary_col, EQ, TYPE_ID, 1, primary_id);
   qry_ret = deleteQuery(sconn, table, wb);
   destroyWhereBuilder(&wb);
 
-  if (qry_ret != 0) {
+  if (qry_ret != 1) {
     return qry_ret;
   }
 
@@ -439,7 +439,7 @@ int addIdMap(struct stored_conn_t *sconn, const char *table,
   strbld_char(sb, ',');
   db_value_sb(sb, TYPE_ID, 1, map_id);
   strbld_char(sb, ')');
-  strbld_str(sb, "` ON DUPLICATE KEY UPDATE `", 0);
+  strbld_str(sb, " ON DUPLICATE KEY UPDATE `", 0);
   strbld_str(sb, primary_col, 0);
   strbld_str(sb, "` = ", 0);
   db_value_sb(sb, TYPE_ID, 1, primary_id);
@@ -464,8 +464,8 @@ int removeIdMap(struct stored_conn_t *sconn, const char *table,
   where_builder *wb;
 
   wb = whereAnd(
-        where(table, primary_col, EQ, TYPE_ID, 1, primary_id),
-        where(table, map_col, EQ, TYPE_ID, 1, map_id)
+        where(0, primary_col, EQ, TYPE_ID, 1, primary_id),
+        where(0, map_col, EQ, TYPE_ID, 1, map_id)
         );
   qry_ret = deleteQuery(sconn, table, wb);
   destroyWhereBuilder(&wb);
