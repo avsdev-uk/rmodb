@@ -52,7 +52,7 @@ void compileLogic_sb(where_logic *logic, str_builder *sb)
 
   strbld_char(sb, '(');
   for (size_t i = 0; i < logic->n_clauses; i++) {
-    compileWhereBuilder_sb(logic->clauses[i], sb);
+    compileWhereBuilder_sb(logic->clauses[i], sb, 0);
     if (i < (logic->n_clauses - 1)) {
       if (logic->logic_type == OR) {
         strbld_str(sb, " OR ", 4);

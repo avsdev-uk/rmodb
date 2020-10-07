@@ -24,7 +24,7 @@ where_builder *createWhereBuilder(where_builder *initial_clause)
 
   return wb;
 }
-int compileWhereBuilder(where_builder *wb, char **str, size_t *str_len)
+int compileWhereBuilder(where_builder *wb, char **str, size_t *str_len, int free_wb)
 {
   struct str_builder_t *sb;
 
@@ -32,11 +32,11 @@ int compileWhereBuilder(where_builder *wb, char **str, size_t *str_len)
     return -1;
   }
 
-  compileWhereBuilder_sb(wb, sb);
+  compileWhereBuilder_sb(wb, sb, free_wb);
 
   return strbld_finalize_or_destroy(&sb, str, str_len);
 }
-void compileWhereBuilder_sb(where_builder *wb, str_builder *sb)
+void compileWhereBuilder_sb(where_builder *wb, str_builder *sb, int free_wb)
 {
   switch(wb->logic_type) {
     case CLAUSE:
@@ -54,6 +54,9 @@ void compileWhereBuilder_sb(where_builder *wb, str_builder *sb)
     {
       break;
     }
+  }
+  if (free_wb) {
+    freeWhereBuilder(&wb);
   }
 }
 void freeWhereBuilder(where_builder **wb_ptr)

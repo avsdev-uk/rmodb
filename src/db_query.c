@@ -284,12 +284,10 @@ int64_t countQuery(struct stored_conn_t *sconn, const char *table, where_builder
   strbld_str(sb, "SELECT COUNT(*) AS `C` FROM `", 0);
   strbld_str(sb, table, 0);
   strbld_str(sb, "` WHERE ", 0);
-  compileWhereBuilder_sb(wb, sb);
+  compileWhereBuilder_sb(wb, sb, 0);
   if (strbld_finalize_or_destroy(&sb, &qry, &qry_len) != 0) {
-    freeWhereBuilder(&wb);
     return -1;
   }
-  freeWhereBuilder(&wb);
 
   qry_ret = scalarInt(sconn, qry, qry_len, 0);
   free(qry);
@@ -310,7 +308,7 @@ int deleteQuery(struct stored_conn_t *sconn, const char *table, where_builder *w
   strbld_str(sb, "DELETE FROM `", 0);
   strbld_str(sb, table, 0);
   strbld_str(sb, "` WHERE ", 0);
-  compileWhereBuilder_sb(wb, sb);
+  compileWhereBuilder_sb(wb, sb, 0);
   if (strbld_finalize_or_destroy(&sb, &qry, &qry_len) != 0) {
     return -1;
   }

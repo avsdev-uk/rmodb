@@ -40,8 +40,8 @@ typedef struct where_builder_t where_builder;
 
 
 where_builder *createWhereBuilder(where_builder *initial_clause);
-int compileWhereBuilder(where_builder *wb, char **str, size_t *str_len);
-void compileWhereBuilder_sb(where_builder *wb, str_builder *sb);
+int compileWhereBuilder(where_builder *wb, char **str, size_t *str_len, int free_wb);
+void compileWhereBuilder_sb(where_builder *wb, str_builder *sb, int free_wb);
 void freeWhereBuilder(where_builder **wb_ptr);
 
 
