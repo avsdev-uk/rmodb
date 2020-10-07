@@ -56,7 +56,7 @@ void compileWhereBuilder_sb(where_builder *wb, str_builder *sb)
     }
   }
 }
-void destroyWhereBuilder(where_builder **wb_ptr)
+void freeWhereBuilder(where_builder **wb_ptr)
 {
   where_builder *wb = finalizeWhere(*wb_ptr);
 

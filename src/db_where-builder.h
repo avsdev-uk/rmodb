@@ -42,7 +42,7 @@ typedef struct where_builder_t where_builder;
 where_builder *createWhereBuilder(where_builder *initial_clause);
 int compileWhereBuilder(where_builder *wb, char **str, size_t *str_len);
 void compileWhereBuilder_sb(where_builder *wb, str_builder *sb);
-void destroyWhereBuilder(where_builder **wb_ptr);
+void freeWhereBuilder(where_builder **wb_ptr);
 
 
 where_builder *where(const char *tbl, const char *col, e_where_op op, e_column_type type,

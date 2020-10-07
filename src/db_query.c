@@ -286,10 +286,10 @@ int64_t countQuery(struct stored_conn_t *sconn, const char *table, where_builder
   strbld_str(sb, "` WHERE ", 0);
   compileWhereBuilder_sb(wb, sb);
   if (strbld_finalize_or_destroy(&sb, &qry, &qry_len) != 0) {
-    destroyWhereBuilder(&wb);
+    freeWhereBuilder(&wb);
     return -1;
   }
-  destroyWhereBuilder(&wb);
+  freeWhereBuilder(&wb);
 
   qry_ret = scalarInt(sconn, qry, qry_len, 0);
   free(qry);
@@ -340,7 +340,7 @@ int syncIdMap(struct stored_conn_t *sconn, const char *table,
 
   wb = where(0, primary_col, EQ, TYPE_ID, 1, primary_id);
   qry_ret = deleteQuery(sconn, table, wb);
-  destroyWhereBuilder(&wb);
+  freeWhereBuilder(&wb);
 
   if (qry_ret != 1) {
     return qry_ret;
@@ -371,8 +371,11 @@ int syncIdMap(struct stored_conn_t *sconn, const char *table,
   }
 
   if (simpleQuery(sconn, qry, qry_len) == (uint64_t)-1) {
-    return -1;
+    qry_ret = -1;
+  } else {
+    qry_ret = 1;
   }
+  free(qry);
 
   return 1;
 }
@@ -411,7 +414,7 @@ int hasIdMap(struct stored_conn_t *sconn, const char *table,
         where(table, map_col, EQ, TYPE_ID, 1, map_id)
         );
   qry_ret = countQuery(sconn, table, wb);
-  destroyWhereBuilder(&wb);
+  freeWhereBuilder(&wb);
 
   return qry_ret > 0;
 }
@@ -468,7 +471,7 @@ int removeIdMap(struct stored_conn_t *sconn, const char *table,
         where(0, map_col, EQ, TYPE_ID, 1, map_id)
         );
   qry_ret = deleteQuery(sconn, table, wb);
-  destroyWhereBuilder(&wb);
+  freeWhereBuilder(&wb);
 
   return qry_ret;
 }

@@ -72,7 +72,7 @@ void freeLogic(where_logic **logic_ptr)
   while (logic->n_clauses > 0) {
     construct = logic->clauses[logic->n_clauses - 1];
     construct->up = 0;
-    destroyWhereBuilder(&construct);
+    freeWhereBuilder(&construct);
     logic->n_clauses--;
   }
   if (logic->clauses != 0) {
@@ -310,7 +310,7 @@ where_builder *where_And_Or(where_builder *wb, where_builder *wb_clause, e_where
     case UNK:
     {
       if ((logic = createLogic(and_or, 2)) == 0) {
-        destroyWhereBuilder(&wb_clause);
+        freeWhereBuilder(&wb_clause);
         return wb;
       }
       free(wb);
@@ -326,7 +326,7 @@ where_builder *where_And_Or(where_builder *wb, where_builder *wb_clause, e_where
     case CLAUSE:
     {
       if ((logic = createLogic(and_or, 2)) == 0) {
-        destroyWhereBuilder(&wb_clause);
+        freeWhereBuilder(&wb_clause);
         return wb;
       }
       logic->clauses[0] = wb;
@@ -345,12 +345,12 @@ where_builder *where_And_Or(where_builder *wb, where_builder *wb_clause, e_where
     {
       if (and_or == AND) {
         if ((logic = createLogic(AND, 2)) == 0) {
-          destroyWhereBuilder(&wb_clause);
+          freeWhereBuilder(&wb_clause);
           return wb;
         }
         if (whereOr(wb, (where_builder *)logic) == 0) {
           freeLogic(&logic);
-          destroyWhereBuilder(&wb_clause);
+          freeWhereBuilder(&wb_clause);
           return wb;
         }
         wb = appendLogicClause((where_builder *)logic, wb_clause);
@@ -366,12 +366,12 @@ where_builder *where_And_Or(where_builder *wb, where_builder *wb_clause, e_where
         wb = appendLogicClause(wb, wb_clause);
       } else {
         if ((logic = createLogic(OR, 2)) == 0) {
-          destroyWhereBuilder(&wb_clause);
+          freeWhereBuilder(&wb_clause);
           return wb;
         }
         if (whereAnd(wb, (where_builder *)logic) == 0) {
           freeLogic(&logic);
-          destroyWhereBuilder(&wb_clause);
+          freeWhereBuilder(&wb_clause);
           return wb;
         }
         wb = appendLogicClause((where_builder *)logic, wb_clause);
