@@ -1,5 +1,5 @@
-#ifndef MODB_ACCOUNTING_H
-#define MODB_ACCOUNTING_H
+#ifndef H__MODB_ACCOUNTING__
+#define H__MODB_ACCOUNTING__
 
 #include "database.h"
 #include "modb_types.h"
@@ -72,4 +72,4 @@ int modbUnlink_Group_User(stored_conn *sconn, modb_ref *modb,
                           unsigned int user_id, unsigned int group_id);
 
 
-#endif // MODB_ACCOUNTING_H
+#endif // H__MODB_ACCOUNTING__
