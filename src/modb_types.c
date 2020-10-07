@@ -37,8 +37,13 @@ void freeUser(struct user_t **user_ptr)
   struct user_t *user = *user_ptr;
 
   if (user->n_groups > 0) {
-    freeGroups(user->groups, user->n_groups);
-    user->groups = 0;
+    if (user->group_ids != 0) {
+      free(user->group_ids);
+      user->group_ids = 0;
+    }
+    if (user->groups != 0) {
+      freeGroups(&user->groups, user->n_groups);
+    }
     user->n_groups = 0;
   }
 
@@ -55,9 +60,10 @@ void freeUser(struct user_t **user_ptr)
   free(user);
   *user_ptr = 0;
 }
-void freeUsers(struct user_t **users, size_t n_users)
+void freeUsers(struct user_t ***users_ptr, size_t n_users)
 {
   size_t idx;
+  struct user_t ** users = *users_ptr;
 
   for (idx = 0; idx < n_users; idx++) {
     if (*(users + idx) != 0) {
@@ -66,6 +72,7 @@ void freeUsers(struct user_t **users, size_t n_users)
   }
 
   free(users);
+  *users_ptr = 0;
 }
 
 
@@ -99,8 +106,13 @@ void freeGroup(struct group_t **group_ptr)
   struct group_t *group = *group_ptr;
 
   if (group->n_members > 0) {
-    freeUsers(group->members, group->n_members);
-    group->members = 0;
+    if (group->member_ids != 0) {
+      free(group->member_ids);
+      group->member_ids = 0;
+    }
+    if (group->members != 0) {
+      freeUsers(&group->members, group->n_members);
+    }
     group->n_members = 0;
   }
 
@@ -112,15 +124,18 @@ void freeGroup(struct group_t **group_ptr)
   free(group);
   *group_ptr = 0;
 }
-void freeGroups(struct group_t **groups, size_t n_groups)
+void freeGroups(struct group_t ***groups_ptr, size_t n_groups)
 {
   size_t idx;
+  struct group_t **groups = *groups_ptr;
 
   for (idx = 0; idx < n_groups; idx++) {
     if (*(groups + idx) != 0) {
-      freeGroup((groups + idx));
+      freeGroup(groups + idx);
     }
   }
 
   free(groups);
+  *groups_ptr = 0;
+}
 }

@@ -25,6 +25,10 @@ int64_t modbUserUpdate(stored_conn *sconn, modb_ref *modb, unsigned int id,
 int modbUserDelete(stored_conn *sconn, modb_ref *modb, int id);
 int modbUserDestroy(stored_conn *sconn, modb_ref *modb, int id);
 
+int modbFetchUserGroupIds(stored_conn *sconn, modb_ref *modb,
+                          struct user_t *user, int with_deleted);
+int modbFetchUserGroups(stored_conn *sconn, modb_ref *modb, struct user_t *user, int with_deleted);
+
 
 // MODB Groups
 int modbGroupById(stored_conn *sconn, modb_ref *modb, unsigned int id, int with_members,
@@ -42,6 +46,11 @@ int64_t modbGroupUpdate(stored_conn *sconn, modb_ref *modb, unsigned int id,
 int modbGroupDelete(stored_conn *sconn, modb_ref *modb, int id);
 int modbGroupDestroy(stored_conn *sconn, modb_ref *modb, int id);
 
+int modbFetchGroupUserIds(stored_conn *sconn, modb_ref *modb, struct group_t *group,
+                          int with_deleted);
+int modbFetchGroupUsers(stored_conn *sconn, modb_ref *modb, struct group_t *group,
+                        int with_deleted);
+
 
 // MODB Users <-> Groups
 int modbSyncUserGroups(stored_conn *sconn, modb_ref *modb,
@@ -52,16 +61,6 @@ int modbSyncGroupUsers(stored_conn *sconn, modb_ref *modb,
                        unsigned int group_id, size_t n_users, unsigned int *user_id);
 int modbSyncGroupUsers_va(stored_conn *sconn, modb_ref *modb,
                           unsigned int group_id, size_t n_users, ...);
-
-
-int modbFetchUserGroupIds(stored_conn *sconn, modb_ref *modb, int with_deleted,
-                        unsigned int user_id, size_t *n_groups, unsigned int **group_ids);
-int modbFetchGroupUserIds(stored_conn *sconn, modb_ref *modb, int with_deleted,
-                        unsigned int group_id, size_t *n_users, unsigned int **user_ids);
-int modbFetchUserGroups(stored_conn *sconn, modb_ref *modb, int with_deleted,
-                        unsigned int user_id, size_t *n_groups, struct group_t ***groups);
-int modbFetchGroupUsers(stored_conn *sconn, modb_ref *modb, int with_deleted,
-                        unsigned int group_id, size_t *n_users, struct user_t ***users);
 
 
 int modbIsLinked_Group_User(stored_conn *sconn, modb_ref *modb,

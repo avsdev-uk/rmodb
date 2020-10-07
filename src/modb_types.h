@@ -23,6 +23,7 @@ struct user_t {
   unsigned int updated_on;
   unsigned int deleted_on;
 
+  unsigned int *group_ids;
   struct group_t **groups;
   size_t n_groups;
 };
@@ -37,6 +38,7 @@ struct group_t {
   unsigned int updated_on;
   unsigned int deleted_on;
 
+  unsigned int *member_ids;
   struct user_t **members;
   size_t n_members;
 };

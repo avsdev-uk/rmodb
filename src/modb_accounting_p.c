@@ -4,6 +4,7 @@
 
 #include "modb_p.h"
 #include "modb_accounting_p.h"
+#include "modb_accounting.h"
 
 
 // ##### USERS
@@ -36,19 +37,19 @@ int tableRowsToUsers(column_data **col_data, size_t n_cols,
   for (idx = 0; idx < n_rows; idx++) {
     user = allocUser();
     if (user == 0) {
-      freeUsers(*users, idx - 1);
+      freeUsers(users, idx - 1);
       return -1;
     }
 
     user->id = *(col_id->data.ptr_uint32 + idx);
     if (strmemcpy(*(col_username->data.ptr_str + idx), *(col_username->data_lens + idx),
                   &user->username, &user->username_len) != 0) {
-      freeUsers(*users, idx);
+      freeUsers(users, idx);
       return -1;
     }
     if (strmemcpy(*(col_email->data.ptr_str + idx), *(col_email->data_lens + idx),
                   &user->email, &user->email_len) != 0) {
-      freeUsers(*users, idx);
+      freeUsers(users, idx);
       return -1;
     }
     user->created_on = *(col_created->data.ptr_uint32 + idx);
@@ -117,7 +118,7 @@ int doUsersQuery(stored_conn *sconn, modb_ref *modb, where_builder *wb,
   return (int)qry_ret;
 }
 int doScalarUsersQuery(stored_conn *sconn, modb_ref *modb,
-                       where_builder *wb, struct user_t **user)
+                       where_builder *wb, int with_groups, struct user_t **user)
 {
   int res;
   struct user_t **users;
@@ -128,9 +129,16 @@ int doScalarUsersQuery(stored_conn *sconn, modb_ref *modb,
     return res;
   }
 
-  *user = *users;
-  *users = 0;
-  freeUsers(users, n_users);
+  *user = *(users + 0);
+  *(users + 0) = 0;
+  freeUsers(&users, n_users);
+
+  if (with_groups) {
+    if (modbFetchUserGroups(sconn, modb, *user, 0) < 0) {
+      freeUser(user);
+      return -1;
+    }
+  }
 
   return res;
 }
@@ -164,14 +172,14 @@ int tableRowsToGroups(column_data **col_data, size_t n_cols,
 
   for (idx = 0; idx < n_rows; idx++) {
     if ((group = allocGroup()) == 0) {
-      freeGroups(*groups, idx - 1);
+      freeGroups(groups, idx - 1);
       return -1;
     }
 
     group->id = *(col_id->data.ptr_uint32 + idx);
     if (strmemcpy(*(col_name->data.ptr_str + idx), *(col_name->data_lens + idx),
                   &group->name, &group->name_len) != 0) {
-      freeGroups(*groups, idx);
+      freeGroups(groups, idx);
       return -1;
     }
     group->created_on = *(col_created->data.ptr_uint32 + idx);
@@ -240,7 +248,7 @@ int doGroupsQuery(stored_conn *sconn, modb_ref *modb, where_builder *wb,
   return (int)qry_ret;
 }
 int doScalarGroupsQuery(stored_conn *sconn, modb_ref *modb,
-                        where_builder *wb, struct group_t **group)
+                        where_builder *wb, int with_members, struct group_t **group)
 {
   int res;
   struct group_t **groups;
@@ -251,9 +259,16 @@ int doScalarGroupsQuery(stored_conn *sconn, modb_ref *modb,
     return res;
   }
 
-  *group = *groups;
-  *groups = 0;
-  freeGroups(groups, n_groups);
+  *group = *(groups + 0);
+  *(groups + 0) = 0;
+  freeGroups(&groups, n_groups);
+
+  if (with_members) {
+    if (modbFetchGroupUsers(sconn, modb, *group, 0) < 0) {
+      freeGroup(group);
+      return -1;
+    }
+  }
 
   return res;
 }
