@@ -22,8 +22,8 @@ int64_t modbUserCreate(stored_conn *sconn, modb_ref *modb,
                        unsigned int id, const char *username, const char *email);
 int64_t modbUserUpdate(stored_conn *sconn, modb_ref *modb, unsigned int id,
                        const char *username, const char *email);
-int modbUserDelete(stored_conn *sconn, modb_ref *modb, int id);
-int modbUserDestroy(stored_conn *sconn, modb_ref *modb, int id);
+int modbUserDelete(stored_conn *sconn, modb_ref *modb, unsigned int id);
+int modbUserDestroy(stored_conn *sconn, modb_ref *modb, unsigned int id);
 
 int modbFetchUserGroupIds(stored_conn *sconn, modb_ref *modb,
                           struct user_t *user, int with_deleted);
@@ -43,8 +43,8 @@ int64_t modbGroupCreate(stored_conn *sconn, modb_ref *modb,
                         unsigned int id, const char *name);
 int64_t modbGroupUpdate(stored_conn *sconn, modb_ref *modb, unsigned int id,
                         const char *name);
-int modbGroupDelete(stored_conn *sconn, modb_ref *modb, int id);
-int modbGroupDestroy(stored_conn *sconn, modb_ref *modb, int id);
+int modbGroupDelete(stored_conn *sconn, modb_ref *modb, unsigned int id);
+int modbGroupDestroy(stored_conn *sconn, modb_ref *modb, unsigned int id);
 
 int modbFetchGroupUserIds(stored_conn *sconn, modb_ref *modb, struct group_t *group,
                           int with_deleted);

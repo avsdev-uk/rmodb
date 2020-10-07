@@ -158,61 +158,33 @@ int64_t modbUserUpdate(stored_conn *sconn, modb_ref *modb, unsigned int id,
 
   return 1;
 }
-int modbUserDelete(stored_conn *sconn, modb_ref *modb, int id)
+int modbUserDelete(stored_conn *sconn, modb_ref *modb, unsigned int id)
 {
-  str_builder *sb;
-  char *qry;
-  size_t qry_len;
-  uint64_t qry_ret;
+  int qry_ret;
+  char *table;
 
-  if ((sb = strbld_create()) == 0) {
-    return 0;
-  }
-  strbld_str(sb, "UPDATE ", 0);
-  modbTableName_sb(sb, modb, USERS_TABLE, strlen(USERS_TABLE), '`');
-  strbld_str(sb, " SET `deleted` = CURRENT_TIMESTAMP() WHERE `id` = ", 0);
-  db_value_sb(sb, TYPE_UINT32, 1, id);
-  if (strbld_finalize_or_destroy(&sb, &qry, &qry_len) != 0) {
+  if ((table = modbTableName(modb, USERS_TABLE, STR_LEN(USERS_TABLE), 0)) == 0) {
     return 0;
   }
 
-  qry_ret = simpleQuery(sconn, qry, qry_len);
-  free(qry);
+  qry_ret = softDeleteByIdQuery(sconn, table, "id", id);
+  free(table);
 
-  // Query failed
-  if (qry_ret == (uint64_t)-1) {
-    return 0;
-  }
-
-  return 1;
+  return qry_ret;
 }
-int modbUserDestroy(stored_conn *sconn, modb_ref *modb, int id)
+int modbUserDestroy(stored_conn *sconn, modb_ref *modb, unsigned int id)
 {
-  str_builder *sb;
-  char *qry;
-  size_t qry_len;
-  uint64_t qry_ret;
+  int qry_ret;
+  char *table;
 
-  if ((sb = strbld_create()) == 0) {
-    return 0;
-  }
-  strbld_str(sb, "DELETE FROM ", 0);
-  modbTableName_sb(sb, modb, USERS_TABLE, strlen(USERS_TABLE), '`');
-  strbld_str(sb, " WHERE `id` = ", 0);
-  db_value_sb(sb, TYPE_UINT32, 1, id);
-  if (strbld_finalize_or_destroy(&sb, &qry, &qry_len) != 0) {
+  if ((table = modbTableName(modb, USERS_TABLE, STR_LEN(USERS_TABLE), 0)) == 0) {
     return 0;
   }
 
-  qry_ret = simpleQuery(sconn, qry, qry_len);
-  free(qry);
+  qry_ret = deleteByIdQuery(sconn, table, "id", id);
+  free(table);
 
-  // Query failed
-  if (qry_ret == (uint64_t)-1) {
-    return 0;
-  }
-
-  return 1;
+  return qry_ret;
 }
 
 int modbFetchUserGroupIds(stored_conn *sconn, modb_ref *modb,
@@ -384,7 +356,7 @@ int64_t modbGroupCreate(stored_conn *sconn, modb_ref *modb,
   return (int64_t)qry_ret;
 }
 int64_t modbGroupUpdate(stored_conn *sconn, modb_ref *modb, unsigned int id,
-                    const char *name)
+                        const char *name)
 {
   str_builder *sb;
   char *qry;
@@ -421,61 +393,33 @@ int64_t modbGroupUpdate(stored_conn *sconn, modb_ref *modb, unsigned int id,
 
   return 1;
 }
-int modbGroupDelete(stored_conn *sconn, modb_ref *modb, int id)
+int modbGroupDelete(stored_conn *sconn, modb_ref *modb, unsigned int id)
 {
-  str_builder *sb;
-  char *qry;
-  size_t qry_len;
-  uint64_t qry_ret;
+  int qry_ret;
+  char *table;
 
-  if ((sb = strbld_create()) == 0) {
-    return 0;
-  }
-  strbld_str(sb, "UPDATE ", 0);
-  modbTableName_sb(sb, modb, GROUPS_TABLE, strlen(GROUPS_TABLE), '`');
-  strbld_str(sb, " SET `deleted` = CURRENT_TIMESTAMP() WHERE `id` = ", 0);
-  db_value_sb(sb, TYPE_UINT32, 1, id);
-  if (strbld_finalize_or_destroy(&sb, &qry, &qry_len) != 0) {
+  if ((table = modbTableName(modb, GROUPS_TABLE, STR_LEN(GROUPS_TABLE), 0)) == 0) {
     return 0;
   }
 
-  qry_ret = simpleQuery(sconn, qry, qry_len);
-  free(qry);
+  qry_ret = softDeleteByIdQuery(sconn, table, "id", id);
+  free(table);
 
-  // Query failed
-  if (qry_ret == (uint64_t)-1) {
-    return 0;
-  }
-
-  return 1;
+  return qry_ret;
 }
-int modbGroupDestroy(stored_conn *sconn, modb_ref *modb, int id)
+int modbGroupDestroy(stored_conn *sconn, modb_ref *modb, unsigned int id)
 {
-  str_builder *sb;
-  char *qry;
-  size_t qry_len;
-  uint64_t qry_ret;
+  int qry_ret;
+  char *table;
 
-  if ((sb = strbld_create()) == 0) {
-    return 0;
-  }
-  strbld_str(sb, "DELETE FROM ", 0);
-  modbTableName_sb(sb, modb, GROUPS_TABLE, strlen(GROUPS_TABLE), '`');
-  strbld_str(sb, " WHERE `id` = ", 0);
-  db_value_sb(sb, TYPE_UINT32, 1, id);
-  if (strbld_finalize_or_destroy(&sb, &qry, &qry_len) != 0) {
+  if ((table = modbTableName(modb, GROUPS_TABLE, STR_LEN(GROUPS_TABLE), 0)) == 0) {
     return 0;
   }
 
-  qry_ret = simpleQuery(sconn, qry, qry_len);
-  free(qry);
+  qry_ret = deleteByIdQuery(sconn, table, "id", id);
+  free(table);
 
-  // Query failed
-  if (qry_ret == (uint64_t)-1) {
-    return 0;
-  }
-
-  return 1;
+  return qry_ret;
 }
 
 int modbFetchGroupUserIds(stored_conn *sconn, modb_ref *modb, struct group_t *group,
