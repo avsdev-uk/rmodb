@@ -206,7 +206,7 @@ int modbUserDelete(stored_conn *sconn, modb_ref *modb, int id)
   if ((sb = strbld_create()) == 0) {
     return 0;
   }
-  strbld_str(sb, "UPDATE`", 0);
+  strbld_str(sb, "UPDATE ", 0);
   modbTableName_sb(sb, modb, USERS_TABLE, strlen(USERS_TABLE), '`');
   strbld_str(sb, " SET `deleted` = CURRENT_TIMESTAMP() WHERE `id` = ", 0);
   db_value_sb(sb, TYPE_UINT32, 1, id);
@@ -343,7 +343,7 @@ int64_t modbGroupCreate(stored_conn *sconn, modb_ref *modb,
   if ((sb = strbld_create()) == 0) {
     return -1;
   }
-  strbld_str(sb, "INSERT INTO`", 0);
+  strbld_str(sb, "INSERT INTO ", 0);
   modbTableName_sb(sb, modb, GROUPS_TABLE, strlen(GROUPS_TABLE), '`');
   strbld_str(sb, " (`id`, `name`) VALUES(", 0);
   db_value_sb(sb, TYPE_UINT32, 1, id);
