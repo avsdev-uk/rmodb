@@ -1,5 +1,5 @@
-#ifndef H__MODB_MANAGEMENT_P__
-#define H__MODB_MANAGEMENT_P__
+#ifndef H__MODB_DATABASE_P__
+#define H__MODB_DATABASE_P__
 
 #include <stdint.h>
 #include <stddef.h>
@@ -17,6 +17,7 @@ uint64_t createMODBTable(stored_conn *sconn, modb_ref *modb, const char *suffix,
 int MODBTableExists(stored_conn *sconn, modb_ref *modb, const char *suffix, size_t suffix_len);
 uint64_t destroyMODBTable(stored_conn *sconn, modb_ref *modb, const char *suffix, size_t suffix_len);
 
+
 uint64_t createSysTable(stored_conn *sconn, modb_ref *modb);
 uint64_t createMetaTable(stored_conn *sconn, modb_ref *modb);
 uint64_t createObjectsTable(stored_conn *sconn, modb_ref *modb);
@@ -29,4 +30,4 @@ uint64_t createUserGroupsTable(stored_conn *sconn, modb_ref *modb);
 uint64_t createMetaExtTable(stored_conn *sconn, modb_ref *modb,
                             column_data **col_data, size_t cols);
 
-#endif // H__MODB_MANAGEMENT_P__
+#endif // H__MODB_DATABASE_P__

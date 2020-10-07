@@ -3,7 +3,7 @@
 #include <string.h>
 #include <errno.h>
 
-#include "modb_management_p.h"
+#include "modb_database_p.h"
 #include "modb_p.h"
 #include "strext.h"
 
@@ -224,7 +224,7 @@ uint64_t destroyMODBTable(stored_conn *sconn, modb_ref *modb, const char *suffix
   if ((sb = strbld_create()) == 0) {
     return (uint64_t)-1;
   }
-  strbld_str(sb, "DROP TABLE ", 0);
+  strbld_str(sb, "DROP TABLE IF EXISTS ", 0);
   modbTableName_sb(sb, modb, suffix, suffix_len, '`');
   if (strbld_finalize_or_destroy(&sb, &qry, &qry_len) != 0) {
     return (uint64_t)-1;
