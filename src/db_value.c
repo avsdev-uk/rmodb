@@ -116,13 +116,15 @@ void db_value_sbva(str_builder *sb, e_column_type type, uint32_t n_args, va_list
 
     tmp_len = va_arg(args, size_t);
 
-    esc_str = (char *)malloc(tmp_len * 2 + 1);
+    esc_str = (char *)malloc(tmp_len * 2 + 1 + 2);
     if (esc_str == 0) {
       fprintf(stderr, "[%d]malloc: (%d) %s\n", __LINE__, errno, strerror(errno));
       return;
     }
 
-    esc_len = mysql_hex_string(esc_str, tmp_str, tmp_len);
+    esc_str[0] = '0';
+    esc_str[1] = 'x';
+    esc_len = mysql_hex_string(esc_str + 2, tmp_str, tmp_len);
     strbld_str(sb, esc_str, esc_len);
     free(esc_str);
     return;

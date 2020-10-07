@@ -240,8 +240,13 @@ void freeColumn(struct column_data_t *col)
   if (col->hasPointers) {
     for (unsigned int r = 0; r < col->n_values; r++) {
       if (!columnRowIsNull(col, r)) {
-        free(*(col->data.ptr_str + r));
-        *(col->data.ptr_str + r) = 0;
+        if (col->type == TYPE_STRING) {
+          free(*(col->data.ptr_str + r));
+          *(col->data.ptr_str + r) = 0;
+        } else {
+          free(*(col->data.ptr_blob + r));
+          *(col->data.ptr_blob + r) = 0;
+        }
       }
     }
 
@@ -378,12 +383,13 @@ int setColumnValue(struct column_data_t *col, uint64_t row, const char *value, s
     case TYPE_BLOB:
     case TYPE_RAW:
     {
-      *(col->data.ptr_str + row) = (char *)malloc(value_size);
-      if (*(col->data.ptr_str + row) == 0) {
+      *(col->data.ptr_blob + row) = (char *)malloc(value_size);
+      if (*(col->data.ptr_blob + row) == 0) {
         fprintf(stderr, "[%d]malloc: (%d) %s\n", __LINE__, errno, strerror(errno));
         return -errno;
       }
-      memcpy(*(col->data.ptr_str + row), value, value_size);
+      memcpy(*(col->data.ptr_blob + row), value, value_size);
+      *(col->data_lens + row) = value_size;
       break;
     }
   }

@@ -66,6 +66,8 @@ struct column_data_t {
     double *ptr_double;
 
     char **ptr_str;
+
+    char **ptr_blob;
   } data;
   size_t *data_lens;
 
