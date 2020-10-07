@@ -1,5 +1,5 @@
-#ifndef H__MODB_MANAGE_P__
-#define H__MODB_MANAGE_P__
+#ifndef H__MODB_MANAGEMENT_P__
+#define H__MODB_MANAGEMENT_P__
 
 #include <stdint.h>
 #include <stddef.h>
@@ -28,4 +28,4 @@ int connectionUseMODB(stored_conn *sconn, modb_ref *modb, int override);
 int connectionGetUse(stored_conn *sconn, modb_ref *modb);
 void connectionReleaseMODB(stored_conn *sconn);
 
-#endif // H__MODB_P__
+#endif // H__MODB_MANAGEMENT_P__

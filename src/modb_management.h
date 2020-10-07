@@ -1,5 +1,5 @@
-#ifndef H__MODB_MANAGE__
-#define H__MODB_MANAGE__
+#ifndef H__MODB_MANAGEMENT__
+#define H__MODB_MANAGEMENT__
 
 #include "database.h"
 #include "modb_types.h"
@@ -26,4 +26,4 @@ int modbMetaExtExists(stored_conn *sconn, modb_ref *modb);
 int modbMetaExtDestroy(stored_conn *sconn, modb_ref *modb);
 
 
-#endif // H__MODB_MANAGE__
+#endif // H__MODB_MANAGEMENT__

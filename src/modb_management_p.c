@@ -3,7 +3,7 @@
 #include <string.h>
 #include <errno.h>
 
-#include "modb_manage_p.h"
+#include "modb_management_p.h"
 #include "modb_p.h"
 #include "strext.h"
 

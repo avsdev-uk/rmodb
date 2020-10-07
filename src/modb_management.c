@@ -3,11 +3,11 @@
 #include <string.h>
 #include <errno.h>
 
-#include "modb_manage.h"
+#include "modb_management.h"
 #include "strext.h"
 
 #include "modb_p.h"
-#include "modb_manage_p.h"
+#include "modb_management_p.h"
 
 
 int modbUse(stored_conn *sconn, modb_ref *modb, int override)
