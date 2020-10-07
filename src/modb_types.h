@@ -10,5 +10,47 @@ struct modb_ref_t {
 };
 typedef struct modb_ref_t modb_ref;
 
+struct user_t {
+  unsigned int id;
+
+  char *username;
+  size_t username_len;
+
+  char *email;
+  size_t email_len;
+
+  unsigned int created_on;
+  unsigned int updated_on;
+  unsigned int deleted_on;
+
+  struct group_t **groups;
+  size_t n_groups;
+};
+
+struct group_t {
+  unsigned int id;
+
+  char *name;
+  size_t name_len;
+
+  unsigned int created_on;
+  unsigned int updated_on;
+  unsigned int deleted_on;
+
+  struct user_t **members;
+  size_t n_members;
+};
+
+
+struct user_t *allocUser(void);
+struct user_t **allocUsers(size_t n_users);
+void freeUser(struct user_t **user);
+void freeUsers(struct user_t **users, size_t n_users);
+
+struct group_t *allocGroup(void);
+struct group_t **allocGroups(size_t n_groups);
+void freeGroup(struct group_t **group);
+void freeGroups(struct group_t **groups, size_t n_groups);
+
 
 #endif // H__MODB_TYPES__
