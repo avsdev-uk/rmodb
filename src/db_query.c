@@ -10,11 +10,15 @@
 #include "db_where-builder.h"
 #include "strext.h"
 
+#ifndef SQL_DEBUG_COLOUR
+#  define SQL_DEBUG_COLOUR 36
+#endif
+
 
 uint64_t simpleQuery(struct stored_conn_t *sconn, const char *qry, size_t qry_len)
 {
 #if defined DEBUG || defined SQL_DEBUG
-  printf("QRY: %s\n", qry);
+  printf("\x1b[%dm" "QRY: %s" "\x1b[0m" "\n", SQL_DEBUG_COLOUR, qry);
 #endif
 
   char *old_ptr;
