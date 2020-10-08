@@ -52,12 +52,13 @@ int tableRowsToUsers(column_data **col_data, size_t n_cols,
       freeUsers(users, idx);
       return -1;
     }
-    user->created_on = *(col_created->data.ptr_uint32 + idx);
+
+    user->created_on = *(col_created->data.ptr_int64 + idx);
     if (!columnRowIsNull(col_updated, idx)) {
-      user->updated_on = *(col_updated->data.ptr_uint32 + idx);
+      user->updated_on = *(col_updated->data.ptr_int64 + idx);
     }
     if (!columnRowIsNull(col_deleted, idx)) {
-      user->deleted_on = *(col_deleted->data.ptr_uint32 + idx);
+      user->deleted_on = *(col_deleted->data.ptr_int64 + idx);
     }
 
     *(*users + idx) = user;
@@ -183,12 +184,12 @@ int tableRowsToGroups(column_data **col_data, size_t n_cols,
       return -1;
     }
 
-    group->created_on = *(col_created->data.ptr_uint32 + idx);
+    group->created_on = *(col_created->data.ptr_int64 + idx);
     if (!columnRowIsNull(col_updated, idx)) {
-      group->updated_on = *(col_updated->data.ptr_uint32 + idx);
+      group->updated_on = *(col_updated->data.ptr_int64 + idx);
     }
     if (!columnRowIsNull(col_deleted, idx)) {
-      group->deleted_on = *(col_deleted->data.ptr_uint32 + idx);
+      group->deleted_on = *(col_deleted->data.ptr_int64 + idx);
     }
 
     *(*groups + idx) = group;

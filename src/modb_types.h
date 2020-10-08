@@ -19,9 +19,9 @@ struct user_t {
   char *email;
   size_t email_len;
 
-  unsigned int created_on;
-  unsigned int updated_on;
-  unsigned int deleted_on;
+  int64_t created_on;
+  int64_t updated_on;
+  int64_t deleted_on;
 
   unsigned int *group_ids;
   struct group_t **groups;
@@ -34,9 +34,9 @@ struct group_t {
   char *name;
   size_t name_len;
 
-  unsigned int created_on;
-  unsigned int updated_on;
-  unsigned int deleted_on;
+  int64_t created_on;
+  int64_t updated_on;
+  int64_t deleted_on;
 
   unsigned int *member_ids;
   struct user_t **members;
