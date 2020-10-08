@@ -241,11 +241,15 @@ void freeColumn(struct column_data_t *col)
     for (unsigned int r = 0; r < col->n_values; r++) {
       if (!columnRowIsNull(col, r)) {
         if (col->type == TYPE_STRING) {
-          free(*(col->data.ptr_str + r));
-          *(col->data.ptr_str + r) = 0;
+          if (*(col->data.ptr_str + r) != 0) {
+            free(*(col->data.ptr_str + r));
+            *(col->data.ptr_str + r) = 0;
+          }
         } else {
-          free(*(col->data.ptr_blob + r));
-          *(col->data.ptr_blob + r) = 0;
+          if (*(col->data.ptr_blob + r) != 0) {
+            free(*(col->data.ptr_blob + r));
+            *(col->data.ptr_blob + r) = 0;
+          }
         }
       }
     }
