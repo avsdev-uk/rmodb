@@ -24,7 +24,7 @@ where_builder *createWhereBuilder(where_builder *initial_clause)
 
   return wb;
 }
-int compileWhereBuilder(where_builder *wb, char **str, size_t *str_len, int free_wb)
+int compileWhereBuilder(char **str, size_t *str_len, where_builder *wb, int free_wb)
 {
   struct str_builder_t *sb;
 
@@ -32,14 +32,21 @@ int compileWhereBuilder(where_builder *wb, char **str, size_t *str_len, int free
     return -1;
   }
 
-  compileWhereBuilder_sb(wb, sb, free_wb);
+  compileWhereBuilder_sb(sb, wb, free_wb);
 
   return strbld_finalize_or_destroy(&sb, str, str_len);
 }
-void compileWhereBuilder_sb(where_builder *wb, str_builder *sb, int free_wb)
+void compileWhereBuilder_sb(str_builder *sb, where_builder *wb, int free_wb)
 {
+  wb = finalizeWhere(wb);
   strbld_str(sb, " WHERE ", 7);
-  do_compileWhereBuilder_sb(wb, sb, free_wb);
+  do_compileWhereBuilder_sb(sb, wb);
+  if (strbld_len(sb) == 7) {
+    strbld_seek(sb, 0, 1);
+  }
+  if (free_wb) {
+    freeWhereBuilder(&wb);
+  }
 }
 void freeWhereBuilder(where_builder **wb_ptr)
 {

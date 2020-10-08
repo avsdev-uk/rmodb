@@ -4,27 +4,24 @@
 
 #include "db_where-builder_p.h"
 
-void do_compileWhereBuilder_sb(where_builder *wb, str_builder *sb, int free_wb)
+void do_compileWhereBuilder_sb(str_builder *sb, where_builder *wb)
 {
   switch(wb->logic_type) {
     case CLAUSE:
     {
-      compileWhere_sb((where_clause *)wb, sb);
+      compileWhere_sb(sb, (where_clause *)wb);
       break;
     }
     case OR:
     case AND:
     {
-      compileLogic_sb((where_logic *)wb, sb);
+      compileLogic_sb(sb, (where_logic *)wb);
       break;
     }
     default:
     {
       break;
     }
-  }
-  if (free_wb) {
-    freeWhereBuilder(&wb);
   }
 }
 
@@ -55,7 +52,7 @@ where_logic *createLogic(e_where_logic type, size_t initial_size)
 
   return logic;
 }
-void compileLogic_sb(where_logic *logic, str_builder *sb)
+void compileLogic_sb(str_builder *sb, where_logic *logic)
 {
   if (logic->n_clauses == 0) {
     return;
@@ -63,7 +60,7 @@ void compileLogic_sb(where_logic *logic, str_builder *sb)
 
   strbld_char(sb, '(');
   for (size_t i = 0; i < logic->n_clauses; i++) {
-    do_compileWhereBuilder_sb(logic->clauses[i], sb, 0);
+    do_compileWhereBuilder_sb(sb, logic->clauses[i]);
     if (i < (logic->n_clauses - 1)) {
       if (logic->logic_type == OR) {
         strbld_str(sb, " OR ", 4);
@@ -165,7 +162,7 @@ where_clause *createWhere(const char *tbl, const char *col, e_where_op op)
 
   return clause;
 }
-void compileWhere_sb(where_clause *clause, str_builder *sb)
+void compileWhere_sb(str_builder *sb, where_clause *clause)
 {
   size_t idx;
 

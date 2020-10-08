@@ -26,6 +26,9 @@ int strbld_finalize_or_destroy(str_builder **sb, char **str, size_t *len);
 
 int strbld_ensure_len(str_builder *sb, size_t len, int absolute);
 
+int strbld_seek(str_builder *sb, size_t to, int zero);
+size_t strbld_len(str_builder *sb);
+
 int strbld_str(str_builder *sb, const char *str, size_t len);
 int strbld_char(str_builder *sb, const char c);
 

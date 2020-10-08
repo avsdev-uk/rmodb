@@ -184,6 +184,25 @@ int strbld_ensure_len(str_builder *sb, size_t len, int absolute)
   return 1;
 }
 
+int strbld_seek(str_builder *sb, size_t to, int zero)
+{
+  if (to > sb->alloc) {
+    return 0;
+  }
+
+  if (zero && to < sb->len) {
+    memset(sb->str + to, 0, sb->len - to);
+  }
+
+  sb->len = to;
+
+  return 1;
+}
+size_t strbld_len(str_builder *sb)
+{
+  return sb->len;
+}
+
 int strbld_str(str_builder *sb, const char *str, size_t len)
 {
   if (sb->fails > 0) {
