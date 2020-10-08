@@ -4,6 +4,7 @@
 #include <stddef.h>
 
 #include "modb_types.h"
+#include "database.h"
 #include "strext.h"
 
 
@@ -47,6 +48,10 @@ void modbColumnNameAs_sb(str_builder *sb, modb_ref *modb,
                          const char *table, size_t table_len,
                          const char *column, size_t column_len,
                          const char *as_column, size_t as_column_len);
+
+int moveColumnStrPointer(column_data *col, size_t row, int move, char **target, size_t *target_len);
+int moveColumnBlobPointer(column_data *col, size_t row, int move,
+                          char **target, size_t *target_len);
 
 
 #endif // H__MODB_P__

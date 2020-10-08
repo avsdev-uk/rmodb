@@ -1,3 +1,7 @@
+﻿#include <stdio.h>
+#include <errno.h>
+#include <string.h>
+
 #include "modb_p.h"
 #include "strext.h"
 
@@ -143,4 +147,50 @@ void modbColumnNameAs_sb(str_builder *sb, modb_ref *modb,
   strbld_char(sb, '`');
   strbld_str(sb, as_column, as_column_len);
   strbld_char(sb, '`');
+}
+
+
+int moveColumnStrPointer(column_data *col, size_t row, int move, char **target, size_t *target_len)
+{
+  if (columnRowIsNull(col, row)) {
+    return 0;
+  }
+
+  if (move) {
+    *target = *(col->data.ptr_str + row);
+    *(col->data.ptr_str + row) = 0;
+    *target_len = *(col->data_lens + row);
+    *(col->data_lens + row) = 0;
+  } else {
+    if (strmemcpy(*(col->data.ptr_str + row), *(col->data_lens + row), target, target_len) != 0) {
+      return -1;
+    }
+  }
+
+  return 0;
+}
+int moveColumnBlobPointer(column_data *col, size_t row, int move,
+                          char **target, size_t *target_len)
+{
+  if (columnRowIsNull(col, row)) {
+    return 0;
+  }
+
+  if (move) {
+    *target = *(col->data.ptr_blob + row);
+    *(col->data.ptr_blob + row) = 0;
+    *target_len = *(col->data_lens + row);
+    *(col->data_lens + row) = 0;
+  } else {
+    *target = (char *)malloc(*(col->data_lens + row));
+    if (*target == 0) {
+      fprintf(stderr, "[%d]malloc: (%d) %s\n", __LINE__, errno, strerror(errno));
+      return -1;
+    }
+
+    memcpy(*target, *(col->data.ptr_blob + row), *(col->data_lens + row));
+    *target_len = *(col->data_lens + row);
+  }
+
+  return 0;
 }

@@ -42,13 +42,13 @@ int tableRowsToUsers(column_data **col_data, size_t n_cols,
     }
 
     user->id = *(col_id->data.ptr_uint32 + idx);
-    if (strmemcpy(*(col_username->data.ptr_str + idx), *(col_username->data_lens + idx),
-                  &user->username, &user->username_len) != 0) {
+
+    if (!moveColumnStrPointer(col_username, idx, 1, &user->username, &user->username_len)) {
       freeUsers(users, idx);
       return -1;
     }
-    if (strmemcpy(*(col_email->data.ptr_str + idx), *(col_email->data_lens + idx),
-                  &user->email, &user->email_len) != 0) {
+
+    if (!moveColumnStrPointer(col_email, idx, 1, &user->email, &user->email_len)) {
       freeUsers(users, idx);
       return -1;
     }
@@ -177,11 +177,12 @@ int tableRowsToGroups(column_data **col_data, size_t n_cols,
     }
 
     group->id = *(col_id->data.ptr_uint32 + idx);
-    if (strmemcpy(*(col_name->data.ptr_str + idx), *(col_name->data_lens + idx),
-                  &group->name, &group->name_len) != 0) {
+
+    if (!moveColumnStrPointer(col_name, idx, 1, &group->name, &group->name_len)) {
       freeGroups(groups, idx);
       return -1;
     }
+
     group->created_on = *(col_created->data.ptr_uint32 + idx);
     if (!columnRowIsNull(col_updated, idx)) {
       group->updated_on = *(col_updated->data.ptr_uint32 + idx);
