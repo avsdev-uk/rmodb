@@ -254,11 +254,11 @@ uint64_t createMetaTable(stored_conn *sconn, modb_ref *modb)
 {
   return createMODBTable(
         sconn, modb,
-        META_TABLE, STR_LEN(META_TABLE),
+        METADATA_TABLE, STR_LEN(METADATA_TABLE),
         "("
         "`mdo_id` INT UNSIGNED NOT NULL AUTO_INCREMENT, "
         "`title` VARCHAR(255) NOT NULL, "
-        "`owner` INT UNSIGNED NOT NULL, "
+        "`owner_id` INT UNSIGNED NOT NULL, "
         "`created` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, "
         "`updated` TIMESTAMP on update CURRENT_TIMESTAMP NULL DEFAULT NULL, "
         "`deleted` TIMESTAMP NULL DEFAULT NULL, "

@@ -35,7 +35,7 @@ int modbCreate(stored_conn *sconn, modb_ref *modb, column_data **col_data, size_
 }
 int modbExists(stored_conn *sconn, modb_ref *modb)
 {
-  return MODBTableExists(sconn, modb, META_TABLE, STR_LEN(META_TABLE));
+  return MODBTableExists(sconn, modb, METADATA_TABLE, STR_LEN(METADATA_TABLE));
 }
 int modbHasExtendedMetadata(stored_conn *sconn, modb_ref *modb)
 {
@@ -46,7 +46,7 @@ int modbDestroy(stored_conn *sconn, modb_ref *modb)
   uint64_t err = 0
       | destroyMODBTable(sconn, modb, MDO_GROUPS_TABLE, STR_LEN(MDO_GROUPS_TABLE))
       | destroyMODBTable(sconn, modb, OBJECTS_TABLE, STR_LEN(OBJECTS_TABLE))
-      | destroyMODBTable(sconn, modb, META_TABLE, STR_LEN(META_TABLE))
+      | destroyMODBTable(sconn, modb, METADATA_TABLE, STR_LEN(METADATA_TABLE))
       | destroyMODBTable(sconn, modb, SYS_TABLE, STR_LEN(SYS_TABLE))
       | destroyMODBTable(sconn, modb, USER_GROUPS_TABLE, STR_LEN(USER_GROUPS_TABLE))
       | destroyMODBTable(sconn, modb, GROUPS_TABLE, STR_LEN(GROUPS_TABLE))
