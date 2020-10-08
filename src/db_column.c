@@ -1,4 +1,4 @@
-#include <stdlib.h>
+﻿#include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
@@ -9,6 +9,7 @@
 #include "strext.h"
 
 
+// PRIVATE
 size_t columnTypeToByteSize(e_column_type type)
 {
   switch(type) {
@@ -52,7 +53,6 @@ size_t columnTypeToByteSize(e_column_type type)
   }
   return sizeof(char *);
 }
-
 e_column_type simplifyFieldType(enum enum_field_types sql_type, int is_unsigned)
 {
   switch(sql_type) {
@@ -115,6 +115,7 @@ e_column_type simplifyFieldType(enum enum_field_types sql_type, int is_unsigned)
 }
 
 
+// PUBLIC
 struct column_data_t *initEmptyColumn(e_column_type type, int nullable, const char *name,
                                       size_t name_len, const char *table, size_t table_len)
 {
@@ -150,8 +151,8 @@ struct column_data_t *initEmptyColumn(e_column_type type, int nullable, const ch
   col->n_values = 0;
 
   col->hasPointers = col->type == TYPE_STRING
-    || col->type == TYPE_BLOB
-    || col->type == TYPE_RAW;
+      || col->type == TYPE_BLOB
+      || col->type == TYPE_RAW;
   col->isUnsigned  = col->type == TYPE_UINT8
       || col->type == TYPE_UINT16
       || col->type == TYPE_UINT32
@@ -163,9 +164,8 @@ struct column_data_t *initEmptyColumn(e_column_type type, int nullable, const ch
 
   return col;
 }
-
-struct column_data_t *columnFromResult(struct stored_conn_t *sconn, MYSQL_RES *result,
-                                       uint64_t num_rows)
+struct column_data_t *createColumnFromResult(struct stored_conn_t *sconn, MYSQL_RES *result,
+                                             uint64_t num_rows)
 {
   MYSQL_FIELD *field;
   struct column_data_t *col;
@@ -173,9 +173,9 @@ struct column_data_t *columnFromResult(struct stored_conn_t *sconn, MYSQL_RES *r
   field = mysql_fetch_field(result);
   if (field == NULL) {
     fprintf(
-      stderr, "[%d]mysql_fetch_field: (%d) %s\n",
-      __LINE__, mysql_errno(SQCONN(sconn)), mysql_error(SQCONN(sconn))
-    );
+          stderr, "[%d]mysql_fetch_field: (%d) %s\n",
+          __LINE__, mysql_errno(SQCONN(sconn)), mysql_error(SQCONN(sconn))
+          );
     return 0;
   }
 
@@ -290,8 +290,8 @@ void freeColumns(struct column_data_t **col_data, size_t n_cols)
   free(col_data);
 }
 
-
-int setColumnValue(struct column_data_t *col, uint64_t row, const char *value, size_t value_size)
+int setColumnValueFromResult(struct column_data_t *col, uint64_t row,
+                             const char *value, size_t value_size)
 {
   if (value == NULL) {
     columnRowSetNull(col, row);
@@ -401,7 +401,8 @@ int setColumnValue(struct column_data_t *col, uint64_t row, const char *value, s
   return 0;
 }
 
-struct column_data_t *findColumn(struct column_data_t **col_data, size_t n_cols, const char *name)
+struct column_data_t *findColumnByName(struct column_data_t **col_data, size_t n_cols,
+                                       const char *name)
 {
   struct column_data_t *col = 0;
   size_t idx = 0;
@@ -418,25 +419,105 @@ struct column_data_t *findColumn(struct column_data_t **col_data, size_t n_cols,
   return 0;
 }
 
-char *createColumn(struct column_data_t *col, char **str, size_t *len)
+
+int columnRowIsNull(struct column_data_t *col, uint64_t row)
+{
+  return col->isNullable && (*(col->nulls + (row / 8)) & (1 << (row % 8))) > 0;
+}
+void columnRowSetNull(struct column_data_t *col, uint64_t row)
+{
+  if (col->isNullable) {
+    *(col->nulls + (row / 8)) |= (1 << (row % 8));
+  }
+}
+void columnRowClearNull(struct column_data_t *col, uint64_t row)
+{
+  if (col->isNullable) {
+    *(col->nulls + (row / 8)) &= ~(1 << (row % 8));
+  }
+}
+
+
+char *escapeColumnName(char **str, size_t *len,
+                       const char *table, size_t table_len, const char *col, size_t col_len)
 {
   str_builder *sb;
 
   if ((sb = strbld_create()) == 0) {
     return 0;
   }
-  createColumn_sb(sb, col);
+  escapeColumnName_sb(sb, table, table_len, col, col_len);
   if (strbld_finalize_or_destroy(&sb, str, len) != 0) {
     return 0;
   }
 
   return *str;
 }
-void createColumn_sb(str_builder *sb, struct column_data_t *col)
+void escapeColumnName_sb(str_builder *sb,
+                         const char *table, size_t table_len, const char *col, size_t col_len)
 {
-  strbld_str(sb, ", `", 3);
-  strbld_str(sb, col->name, col->name_len);
-  strbld_str(sb, "` ", 2);
+  if (table != 0) {
+    strbld_char(sb,'`');
+    strbld_str(sb, table, table_len);
+    strbld_char(sb,'`');
+    strbld_char(sb,'.');
+  }
+  strbld_char(sb,'`');
+  strbld_str(sb, col, col_len);
+  strbld_char(sb,'`');
+}
+
+char *escapeColumnNameAs(char **str, size_t *len, const char *tbl, size_t tbl_len,
+                         const char *col, size_t col_len, const char *as, size_t as_len)
+{
+  str_builder *sb;
+
+  if ((sb = strbld_create()) == 0) {
+    return 0;
+  }
+  escapeColumnNameAs_sb(sb, tbl, tbl_len, col, col_len, as, as_len);
+  if (strbld_finalize_or_destroy(&sb, str, len) != 0) {
+    return 0;
+  }
+
+  return *str;
+}
+void escapeColumnNameAs_sb(str_builder *sb, const char *tbl, size_t tbl_len,
+                           const char *col, size_t col_len, const char *as, size_t as_len)
+{
+  escapeColumnName_sb(sb, tbl, tbl_len, col, col_len);
+  strbld_str(sb, " AS ", 4);
+  escapeColumnName_sb(sb, 0, 0, as, as_len);
+}
+
+char *escapeTableName(char **str, size_t *len, const char *table, size_t table_len)
+{
+  return escapeColumnName(str, len, 0, 0, table, table_len);
+}
+void escapeTableName_sb(str_builder *sb, const char *table, size_t table_len)
+{
+  escapeColumnName_sb(sb, 0, 0, table, table_len);
+}
+
+
+char *columnCreateStr(char **str, size_t *len, struct column_data_t *col)
+{
+  str_builder *sb;
+
+  if ((sb = strbld_create()) == 0) {
+    return 0;
+  }
+  columnCreateStr_sb(sb, col);
+  if (strbld_finalize_or_destroy(&sb, str, len) != 0) {
+    return 0;
+  }
+
+  return *str;
+}
+void columnCreateStr_sb(str_builder *sb, struct column_data_t *col)
+{
+  escapeColumnName_sb(sb, 0, 0, col->name, col->name_len);
+  strbld_char(sb, ' ');
 
   switch(col->type) {
     case TYPE_RAW:
@@ -495,3 +576,79 @@ void createColumn_sb(str_builder *sb, struct column_data_t *col)
     strbld_str(sb, " AUTO_INCREMENT", 0);
   }
 }
+
+char *columnSetValueStr(char **set, size_t *set_len,
+                        const char *column, e_column_type type, uint32_t n_args, ...)
+{
+  va_list args;
+
+  va_start(args, n_args);
+  columnSetValueStr_va(set, set_len, column, type, n_args, args);
+  va_end(args);
+
+  return *set;
+}
+char *columnSetValueStr_va(char **set, size_t *set_len,
+                           const char *column, e_column_type type, uint32_t n_args, va_list args)
+{
+  str_builder *sb;
+
+  if ((sb = strbld_create()) == 0) {
+    return 0;
+  }
+  columnSetValueStr_sbva(sb, column, type, n_args, args);
+  if (strbld_finalize_or_destroy(&sb, set, set_len) != 0) {
+    return 0;
+  }
+
+  return *set;
+}
+void columnSetValueStr_sb(str_builder *sb,
+                          const char *column, e_column_type type, uint32_t n_args, ...)
+{
+  va_list args;
+  va_start(args, n_args);
+  columnSetValueStr_sbva(sb, column, type, n_args, args);
+  va_end(args);
+}
+void columnSetValueStr_sbva(str_builder *sb,
+                            const char *column, e_column_type type, uint32_t n_args, va_list args)
+{
+  escapeColumnName_sb(sb, 0, 0, column, 0);
+  strbld_str(sb, " = ", 0);
+  db_value_sbva(sb, type, n_args, args);
+}
+
+char *joinStr(char **str, size_t *len,
+              const char *join_type, size_t join_type_len, int is_equals,
+              const char *tableA, size_t tableA_len, const char *colA, size_t colA_len,
+              const char *tableB, size_t tableB_len, const char *colB, size_t colB_len)
+{
+  str_builder *sb;
+
+  if ((sb = strbld_create()) == 0) {
+    return 0;
+  }
+  joinStr_sb(sb, join_type, join_type_len, is_equals,
+             tableA, tableA_len, colA, colA_len,
+             tableB, tableB_len, colB, colB_len);
+  if (strbld_finalize_or_destroy(&sb, str, len) != 0) {
+    return 0;
+  }
+
+  return *str;
+}
+void joinStr_sb(str_builder *sb,
+                const char *join_type, size_t join_type_len, int is_equals,
+                const char *tableA, size_t tableA_len, const char *colA, size_t colA_len,
+                const char *tableB, size_t tableB_len, const char *colB, size_t colB_len)
+{
+  strbld_str(sb, join_type, join_type_len);
+  strbld_str(sb, " JOIN ", 6);
+  escapeTableName_sb(sb, tableA, tableA_len);
+  strbld_str(sb, " ON ", 4);
+  escapeColumnName_sb(sb, tableA, tableA_len, colA, colA_len);
+  strbld_str(sb, (is_equals ? " = " : " != "), (is_equals ? 3 : 4));
+  escapeColumnName_sb(sb, tableB, tableB_len, colB, colB_len);
+}
+

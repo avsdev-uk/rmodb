@@ -76,39 +76,64 @@ struct column_data_t {
 typedef struct column_data_t column_data;
 
 
-// Null column value handling - maybe convert these to macros?
-static inline int columnRowIsNull(struct column_data_t *col, uint64_t row)
-{
-  return col->isNullable && (*(col->nulls + (row / 8)) & (1 << (row % 8))) > 0;
-}
-static inline void columnRowSetNull(struct column_data_t *col, uint64_t row)
-{
-  if (col->isNullable) {
-    *(col->nulls + (row / 8)) |= (1 << (row % 8));
-  }
-}
-static inline void columnRowClearNull(struct column_data_t *col, uint64_t row)
-{
-  if (col->isNullable) {
-    *(col->nulls + (row / 8)) &= ~(1 << (row % 8));
-  }
-}
-
 struct column_data_t *initEmptyColumn(e_column_type type, int nullable, const char *name,
                                       size_t name_len, const char *table, size_t table_len);
-struct column_data_t *columnFromResult(struct stored_conn_t *sconn, MYSQL_RES *result,
-                                       uint64_t num_rows);
+struct column_data_t *createColumnFromResult(struct stored_conn_t *sconn, MYSQL_RES *result,
+                                             uint64_t num_rows);
 void freeColumn(struct column_data_t *col);
 void freeColumns(struct column_data_t **col_data, size_t n_cols);
 
-int setColumnValue(struct column_data_t *col, uint64_t row, const char *value, size_t value_size);
+int setColumnValueFromResult(struct column_data_t *col, uint64_t row,
+                             const char *value, size_t value_size);
 
-struct column_data_t *findColumn(struct column_data_t **col_data, size_t n_cols,
-                                   const char *name);
+struct column_data_t *findColumnByName(struct column_data_t **col_data, size_t n_cols,
+                                       const char *name);
+
+int columnRowIsNull(struct column_data_t *col, uint64_t row);
+void columnRowSetNull(struct column_data_t *col, uint64_t row);
+void columnRowClearNull(struct column_data_t *col, uint64_t row);
 
 
-char *createColumn(struct column_data_t *col_data, char **str, size_t *len);
-void createColumn_sb(str_builder *sb, struct column_data_t *col);
+char *escapeColumnName(char **str, size_t *len,
+                       const char *table, size_t table_len,
+                       const char *column, size_t column_len);
+void escapeColumnName_sb(str_builder *sb,
+                         const char *table, size_t table_len,
+                         const char *column, size_t column_len);
+
+char *escapeColumnNameAs(char **str, size_t *len,
+                         const char *table, size_t table_len,
+                         const char *column, size_t column_len,
+                         const char *as_column, size_t as_column_len);
+void escapeColumnNameAs_sb(str_builder *sb,
+                           const char *table, size_t table_len,
+                           const char *column, size_t column_len,
+                           const char *as_column, size_t as_column_len);
+
+char *escapeTableName(char **str, size_t *len, const char *table, size_t table_len);
+void escapeTableName_sb(str_builder *sb, const char *table, size_t table_len);
+
+
+char *columnCreateStr(char **str, size_t *len, struct column_data_t *col);
+void columnCreateStr_sb(str_builder *sb, struct column_data_t *col);
+
+char *columnSetValueStr(char **set, size_t *set_len,
+                        const char *column, e_column_type type, uint32_t n_args, ...);
+char *columnSetValueStr_va(char **set, size_t *set_len,
+                           const char *column, e_column_type type, uint32_t n_args, va_list args);
+void columnSetValueStr_sb(str_builder *sb,
+                          const char *column, e_column_type type, uint32_t n_args, ...);
+void columnSetValueStr_sbva(str_builder *sb,
+                            const char *column, e_column_type type, uint32_t n_args, va_list args);
+
+char *joinStr(char **str, size_t *len,
+                 const char *join_type, size_t join_type_len, int is_equals,
+                 const char *tableA, size_t tableA_len, const char *colA, size_t colA_len,
+                 const char *tableB, size_t tableB_len, const char *colB, size_t colB_len);
+void joinStr_sb(str_builder *sb,
+                   const char *join_type, size_t join_type_len, int is_equals,
+                   const char *tableA, size_t tableA_len, const char *colA, size_t colA_len,
+                   const char *tableB, size_t tableB_len, const char *colB, size_t colB_len);
 
 
 #endif // H__DB_COLUMN__

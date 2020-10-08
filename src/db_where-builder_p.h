@@ -50,9 +50,10 @@ struct where_clause_t {
 typedef struct where_clause_t where_clause;
 
 DLL_LOCAL
-where_logic *createLogic(e_where_logic type, size_t initial_size);
+void do_compileWhereBuilder_sb(where_builder *wb, str_builder *sb, int free_wb);
+
 DLL_LOCAL
-int compileLogic(where_logic *logic, char **str, size_t *str_len);
+where_logic *createLogic(e_where_logic type, size_t initial_size);
 DLL_LOCAL
 void compileLogic_sb(where_logic *logic, str_builder *sb);
 DLL_LOCAL
@@ -63,8 +64,6 @@ where_builder *appendLogicClause(where_builder *wb, where_builder *wb_clause);
 
 DLL_LOCAL
 where_clause *createWhere(const char *tbl, const char *col, e_where_op op);
-DLL_LOCAL
-int compileWhere(where_clause *clause, char **str, size_t *str_len);
 DLL_LOCAL
 void compileWhere_sb(where_clause *clause, str_builder *sb);
 DLL_LOCAL

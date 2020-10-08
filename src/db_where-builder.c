@@ -38,26 +38,8 @@ int compileWhereBuilder(where_builder *wb, char **str, size_t *str_len, int free
 }
 void compileWhereBuilder_sb(where_builder *wb, str_builder *sb, int free_wb)
 {
-  switch(wb->logic_type) {
-    case CLAUSE:
-    {
-      compileWhere_sb((where_clause *)wb, sb);
-      break;
-    }
-    case OR:
-    case AND:
-    {
-      compileLogic_sb((where_logic *)wb, sb);
-      break;
-    }
-    default:
-    {
-      break;
-    }
-  }
-  if (free_wb) {
-    freeWhereBuilder(&wb);
-  }
+  strbld_str(sb, " WHERE ", 7);
+  do_compileWhereBuilder_sb(wb, sb, free_wb);
 }
 void freeWhereBuilder(where_builder **wb_ptr)
 {

@@ -114,7 +114,7 @@ uint64_t tableQuery(struct stored_conn_t *sconn, const char *qry, size_t qry_len
 
 
   for (unsigned int i = 0; i < *n_cols; i++) {
-    *(col_data + i) = columnFromResult(sconn, result, n_rows);
+    *(col_data + i) = createColumnFromResult(sconn, result, n_rows);
 
     if (*(col_data + i) == 0) {
       failed++;
@@ -146,7 +146,7 @@ uint64_t tableQuery(struct stored_conn_t *sconn, const char *qry, size_t qry_len
     for (unsigned int c = 0; c < *n_cols; c++) {
       struct column_data_t *col = (*(col_data + c));
 
-      if (setColumnValue(col, r, *(row + c), *(lens + c)) < 0) {
+      if (setColumnValueFromResult(col, r, *(row + c), *(lens + c)) < 0) {
         failed++;
       }
     }
