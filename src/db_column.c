@@ -463,7 +463,9 @@ void escapeColumnName_sb(str_builder *sb,
     strbld_char(sb,'.');
   }
   strbld_char(sb,'`');
-  strbld_str(sb, col, col_len);
+  if (col != 0) {
+    strbld_str(sb, col, col_len);
+  }
   strbld_char(sb,'`');
 }
 
