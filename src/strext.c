@@ -190,6 +190,11 @@ int strbld_str(str_builder *sb, const char *str, size_t len)
     return 0;
   }
 
+  if (str == 0) {
+    // NOTE: Should this be a fail?
+    return 0;
+  }
+
   if (len == 0) {
     len = strlen(str);
   }
