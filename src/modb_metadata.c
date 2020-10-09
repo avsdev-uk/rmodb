@@ -234,6 +234,59 @@ int modbMetadataById(stored_conn *sconn, modb_ref *modb, unsigned int id,
   return res;
 }
 
+
+int modbMetadataListByOwnerId(stored_conn *sconn, modb_ref *modb, unsigned int owner_id,
+                              int with_deleted,
+                              struct metadata_t ***metadata_list, size_t *n_metadatas)
+{
+  where_builder *wb = 0;
+  int res;
+
+  wb = where(0, "owner_id", EQ, TYPE_ID, owner_id);
+  if (with_deleted == 0) {
+    wb = whereAnd(wb, where(0, "deleted_on", IS_NULL, TYPE_RAW, 0, 0));
+  }
+  res = doMetadataListQuery(sconn, modb, wb, metadata_list, n_metadatas);
+  if (wb != 0) {
+    freeWhereBuilder(&wb);
+  }
+
+  return res;
+}
+int modbMetadataListByGroupId(stored_conn *sconn, modb_ref *modb, unsigned int group_id,
+                              int with_deleted,
+                              struct metadata_t ***metadata_list, size_t *n_metadatas)
+{
+  unsigned int *ids = 0;
+  size_t n_ids;
+  size_t idx;
+  where_builder *wb = 0;
+  int res;
+
+  if (modbFetchGroupMetadataIds(sconn, modb, group_id, with_deleted, &ids, &n_ids) < 0) {
+    return -1;
+  }
+  if (ids == 0) {
+    return 0;
+  }
+
+  *metadata_list = (struct metadata_t **)malloc(sizeof(struct metadata_t *) * n_ids);
+  if (*metadata_list == 0) {
+    return -1;
+  }
+
+  wb = whereIn(0, 0, "mdo_id", TYPE_ID, 0);
+  for (idx = 0; idx < n_ids; idx++) {
+    setWhereValue(wb, TYPE_ID, 1, *(ids + idx));
+  }
+  res = doMetadataListQuery(sconn, modb, wb, metadata_list, n_metadatas);
+  if (wb != 0) {
+    freeWhereBuilder(&wb);
+  }
+
+  return res;
+}
+
 int modbMetadataList(stored_conn *sconn, modb_ref *modb, int with_deleted,
                      struct metadata_t ***metadata_list, size_t *n_metadatas)
 {
@@ -453,11 +506,31 @@ int modbMetadataDestroy(stored_conn *sconn, modb_ref *modb, unsigned int id)
 }
 
 
+// MODB Metadata -> Owner
+int64_t modbFetchMetadataOwner(stored_conn *sconn, modb_ref *modb, struct metadata_t *metadata)
+{
+  return modbUserById(sconn, modb, metadata->owner_id, 0, &metadata->owner);
+}
+
+// MODB Metadata -> Object
+int64_t modbFetchMetadataObject(stored_conn *sconn, modb_ref *modb, struct metadata_t *metadata)
+{
+  return modbObjectById(sconn, modb, metadata->id, &metadata->object);
+}
+
+// MODB Metadata -> MetadataExtended
+int64_t modbFetchMetadataExtended(stored_conn *sconn, modb_ref *modb, struct metadata_t *metadata)
+{
+  // TODO: implement
+  return -1;
+}
+
+// MODB Metadata -> Groups
 int modbFetchMetadataGroupIds(stored_conn *sconn, modb_ref *modb,
                               struct metadata_t *metadata, int with_deleted)
 {
-  char *g_table, *ug_table;
-  size_t g_len, ug_len;
+  char *g_table, *mg_table;
+  size_t g_len, mg_len;
   char *qry;
   size_t qry_len;
   uint64_t qry_ret;
@@ -472,13 +545,13 @@ int modbFetchMetadataGroupIds(stored_conn *sconn, modb_ref *modb,
     return -1;
   }
   modbTableName(&g_table, &g_len, modb, GROUPS_TABLE, STR_LEN(GROUPS_TABLE));
-  modbTableName(&ug_table, &ug_len, modb, MDO_GROUPS_TABLE, STR_LEN(MDO_GROUPS_TABLE));
+  modbTableName(&mg_table, &mg_len, modb, MDO_GROUPS_TABLE, STR_LEN(MDO_GROUPS_TABLE));
 
   strbld_str(sb, "SELECT ", 0);
   escapeColumnName_sb(sb, 0, 0, "group_id", 0);
   strbld_str(sb, " FROM ", 0);
-  escapeTableName_sb(sb, ug_table, ug_len);
-  joinStr_sb(sb, " LEFT", 5, 1, g_table, g_len, "id", 2, ug_table, ug_len, "group_id", 8);
+  escapeTableName_sb(sb, mg_table, mg_len);
+  joinStr_sb(sb, " LEFT", 5, 1, g_table, g_len, "id", 2, mg_table, mg_len, "group_id", 8);
   wb = where(0, "mdo_id", EQ, TYPE_ID, 1, metadata->id);
   if (!with_deleted) {
     wb = whereAnd(wb, where(g_table, "deleted", IS_NULL, TYPE_RAW, 0));
@@ -486,7 +559,7 @@ int modbFetchMetadataGroupIds(stored_conn *sconn, modb_ref *modb,
   compileWhereBuilder_sb(sb, wb, 1);
 
   modbFreeTableName(&g_table);
-  modbFreeTableName(&ug_table);
+  modbFreeTableName(&mg_table);
   if (strbld_finalize_or_destroy(&sb, &qry, &qry_len) != 0) {
     return -1;
   }
@@ -614,4 +687,68 @@ int modbUnlink_Metadata_Group(stored_conn *sconn, modb_ref *modb,
   modbFreeTableName(&table);
 
   return (int)qry_ret;
+}
+
+
+// MODB Group -> Metadatas
+int modbFetchGroupMetadataIds(stored_conn *sconn, modb_ref *modb,
+                              unsigned int group_id, int with_deleted,
+                              unsigned int **metadata_ids, size_t *n_ids)
+{
+  char *mg_table, *m_table;
+  size_t mg_len, m_len;
+  char *qry;
+  size_t qry_len;
+  uint64_t qry_ret;
+
+  str_builder *sb;
+  where_builder *wb;
+
+  column_data **col_data;
+  size_t n_cols;
+
+  if ((sb = strbld_create()) == 0) {
+    return -1;
+  }
+  modbTableName(&m_table, &m_len, modb, METADATA_TABLE, STR_LEN(METADATA_TABLE));
+  modbTableName(&mg_table, &mg_len, modb, MDO_GROUPS_TABLE, STR_LEN(MDO_GROUPS_TABLE));
+
+  strbld_str(sb, "SELECT ", 7);
+  escapeColumnName_sb(sb, mg_table, mg_len, "mdo_id", 6);
+  strbld_str(sb, " FROM ", 6);
+  escapeTableName_sb(sb, mg_table, mg_len);
+  joinStr_sb(sb, " LEFT", 5, 1, m_table, m_len, "mdo_id", 6, mg_table, mg_len, "mdo_id", 6);
+  wb = where(0, "group_id", EQ, TYPE_ID, 1, group_id);
+  if (!with_deleted) {
+    wb = whereAnd(wb, where(m_table, "deleted", IS_NULL, TYPE_RAW, 0));
+  }
+  compileWhereBuilder_sb(sb, wb, 1);
+
+  modbFreeTableName(&mg_table);
+  modbFreeTableName(&m_table);
+  if (strbld_finalize_or_destroy(&sb, &qry, &qry_len) != 0) {
+    return -1;
+  }
+
+  qry_ret = tableQuery(sconn, qry, qry_len, 0, &col_data, &n_cols);
+  free(qry);
+
+  // Query failed
+  if (qry_ret == (uint64_t)-1) {
+    return -1;
+  }
+
+  // Zero row result
+  if (qry_ret == 0) {
+    freeColumns(col_data, n_cols);
+    return 0;
+  }
+
+  *metadata_ids = (*col_data)->data.ptr_uint32;
+  *n_ids = (*col_data)->n_values;
+  (*col_data)->data.ptr_uint32 = 0;
+
+  freeColumns(col_data, n_cols);
+
+  return 1;
 }

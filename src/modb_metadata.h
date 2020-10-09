@@ -39,12 +39,16 @@ void freeMetadataList(struct metadata_t ***metadata_list_ptr, size_t n_metadatas
 // MODB Metadata
 int modbMetadataById(stored_conn *sconn, modb_ref *modb, unsigned int id,
                      struct metadata_t **metadata);
-// MetadataList by owner
-// MetadataList by group
-// MetadataList by owner/owner groups
+
+int modbMetadataListByOwnerId(stored_conn *sconn, modb_ref *modb, unsigned int owner_id,
+                              int with_deleted,
+                              struct metadata_t ***metadata_list, size_t *n_metadatas);
+int modbMetadataListByGroupId(stored_conn *sconn, modb_ref *modb, unsigned int group_id,
+                              int with_deleted,
+                              struct metadata_t ***metadata_list, size_t *n_metadatas);
 
 int modbMetadataList(stored_conn *sconn, modb_ref *modb, int with_deleted,
-                     struct metadata_t ***metadata_list, size_t *n_metadata_list);
+                     struct metadata_t ***metadata_list, size_t *n_metadatas);
 
 int64_t modbMetadataCreate(stored_conn *sconn, modb_ref *modb,
                            const struct metadata_t *const metadata);
@@ -64,6 +68,15 @@ int modbMetadataDelete(stored_conn *sconn, modb_ref *modb, unsigned int id);
 int modbMetadataDestroy(stored_conn *sconn, modb_ref *modb, unsigned int id);
 
 
+// MODB Metadata -> Owner
+int64_t modbFetchMetadataOwner(stored_conn *sconn, modb_ref *modb, struct metadata_t *metadata);
+
+// MODB Metadata -> Object
+int64_t modbFetchMetadataObject(stored_conn *sconn, modb_ref *modb, struct metadata_t *metadata);
+
+// MODB Metadata -> MetadataExtended
+int64_t modbFetchMetadataExtended(stored_conn *sconn, modb_ref *modb, struct metadata_t *metadata);
+
 // MODB Metadata -> Groups
 int modbFetchMetadataGroupIds(stored_conn *sconn, modb_ref *modb,
                               struct metadata_t *metadata, int with_deleted);
@@ -81,5 +94,10 @@ int modbLink_Metadata_Group(stored_conn *sconn, modb_ref *modb,
                             unsigned int metadata_id, unsigned int group_id);
 int modbUnlink_Metadata_Group(stored_conn *sconn, modb_ref *modb,
                               unsigned int metadata_id, unsigned int group_id);
+
+// MODB Group -> Metadatas
+int modbFetchGroupMetadataIds(stored_conn *sconn, modb_ref *modb,
+                              unsigned int group_id, int with_deleted,
+                              unsigned int **metadata_ids, size_t *n_ids);
 
 #endif // H__MODB_METADATA__
