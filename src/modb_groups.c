@@ -1,220 +1,95 @@
+
+#include <stdio.h>
 #include <string.h>
 #include <errno.h>
 
-#include "modb_accounting.h"
+#include "modb_groups.h"
+#include "modb_users.h"
 #include "modb_p.h"
-#include "modb_accounting_p.h"
 
 
-// ##### USERS
-int modbUserById(stored_conn *sconn, modb_ref *modb, unsigned int id, int with_groups,
-                 struct user_t **user)
+// ##### PRIVATE
+int tableRowsToGroups(column_data **col_data, size_t n_cols,
+                      struct group_t ***groups, size_t *n_groups)
 {
-  where_builder *wb = 0;
-  int res;
+  column_data *col_id, *col_name, *col_created, *col_updated, *col_deleted;
+  size_t n_rows, idx;
+  struct group_t *group;
 
-  wb = where(0, "id", EQ, TYPE_UINT32, 1, id);
-  res = doScalarUsersQuery(sconn, modb, wb, with_groups, user);
-  freeWhereBuilder(&wb);
-
-  return res;
-}
-int modbUserByName(stored_conn *sconn, modb_ref *modb, const char *username, int with_groups,
-                   struct user_t **user)
-{
-  where_builder *wb = 0;
-  int res;
-
-  wb = where(0, "username", EQ, TYPE_STRING, 1, username);
-  res = doScalarUsersQuery(sconn, modb, wb, with_groups, user);
-  freeWhereBuilder(&wb);
-
-  return res;
-}
-int modbUserByEmail(stored_conn *sconn, modb_ref *modb, const char *email, int with_groups,
-                   struct user_t **user)
-{
-  where_builder *wb = 0;
-  int res;
-
-  wb = where(0, "email", EQ, TYPE_STRING, 1, email);
-  res = doScalarUsersQuery(sconn, modb, wb, with_groups, user);
-  freeWhereBuilder(&wb);
-
-  return res;
-}
-int modbUserSearch(stored_conn *sconn, modb_ref *modb, const char *username_email, int with_groups,
-                   struct user_t **user)
-{
-  where_builder *wb = 0;
-  int res;
-
-  wb = whereOr(
-        where(0, "username", EQ, TYPE_STRING, 1, username_email),
-        where(0, "email", EQ, TYPE_STRING, 1, username_email)
-        );
-  res = doScalarUsersQuery(sconn, modb, wb, with_groups, user);
-  freeWhereBuilder(&wb);
-
-  return res;
-}
-
-int modbUserList(stored_conn *sconn, modb_ref *modb, int with_deleted, int with_groups,
-                 struct user_t ***users, size_t *n_users)
-{
-  where_builder *wb = 0;
-  int res;
-  size_t idx;
-  struct user_t *user;
-
-  if (with_deleted == 0) {
-    wb = where(0, "deleted_on", IS_NULL, TYPE_RAW, 0, 0);
-  }
-  res = doUsersQuery(sconn, modb, wb, users, n_users);
-  if (wb != 0) {
-    freeWhereBuilder(&wb);
+  n_rows = (*col_data)->n_values;
+  if (n_rows == 0) {
+    return 0;
   }
 
-  if (res > 0 && with_groups) {
-    for (idx = 0; idx < *n_users; idx++) {
-      user = *((*users) + idx);
-      if (modbFetchUserGroups(sconn, modb, user, with_deleted) < 0) {
-        freeUsers(users, *n_users);
-        return -1;
-      }
+  col_id = findColumnByName(col_data, n_cols, "id");
+  col_name = findColumnByName(col_data, n_cols, "name");
+  col_created = findColumnByName(col_data, n_cols, "created");
+  col_updated = findColumnByName(col_data, n_cols, "updated");
+  col_deleted = findColumnByName(col_data, n_cols, "deleted");
+
+  *groups = (struct group_t **)malloc(sizeof(struct group_t *) * n_rows);
+  if (*groups == 0) {
+    fprintf(stderr, "[%d]malloc: (%d) %s\n", __LINE__, errno, strerror(errno));
+    return -1;
+  }
+  memset(*groups, 0, sizeof(struct group_t *) * n_rows);
+
+  for (idx = 0; idx < n_rows; idx++) {
+    if ((group = allocGroup()) == 0) {
+      freeGroups(groups, idx - 1);
+      return -1;
     }
+
+    group->id = *(col_id->data.ptr_uint32 + idx);
+
+    if (!moveColumnStrPointer(col_name, idx, 1, &group->name, &group->name_len)) {
+      freeGroups(groups, idx);
+      return -1;
+    }
+
+    group->created_on = *(col_created->data.ptr_int64 + idx);
+    if (!columnRowIsNull(col_updated, idx)) {
+      group->updated_on = *(col_updated->data.ptr_int64 + idx);
+    }
+    if (!columnRowIsNull(col_deleted, idx)) {
+      group->deleted_on = *(col_deleted->data.ptr_int64 + idx);
+    }
+
+    *(*groups + idx) = group;
   }
 
-  return res;
-}
+  *n_groups = n_rows;
 
-int64_t modbUserCreate(stored_conn *sconn, modb_ref *modb,
-                       unsigned int id, const char *user_name, const char *email)
+  return 1;
+}
+int doGroupsQuery(stored_conn *sconn, modb_ref *modb, where_builder *wb,
+                  struct group_t ***groups, size_t *n_groups)
 {
-  str_builder *sb;
   char *table;
   size_t table_len;
   char *qry;
   size_t qry_len;
   uint64_t qry_ret;
-
-  if ((sb = strbld_create()) == 0) {
-    return -1;
-  }
-  modbTableName(&table, &table_len, modb, USERS_TABLE, strlen(USERS_TABLE));
-
-  strbld_str(sb, "INSERT INTO ", 0);
-  escapeTableName_sb(sb, table, table_len);
-  strbld_str(sb, " (`id`, `username`, `email`) VALUES (", 0);
-  db_value_sb(sb, TYPE_UINT32, 1, id);
-  strbld_char(sb, ',');
-  db_value_sb(sb, TYPE_STRING, 1, user_name);
-  strbld_char(sb, ',');
-  db_value_sb(sb, TYPE_STRING, 1, email);
-  strbld_char(sb, ')');
-
-  modbFreeTableName(&table);
-  if (strbld_finalize_or_destroy(&sb, &qry, &qry_len) != 0) {
-    return -1;
-  }
-
-  qry_ret = simpleQuery(sconn, qry, qry_len);
-  free(qry);
-
-  return (int64_t)qry_ret;
-}
-int64_t modbUserUpdate(stored_conn *sconn, modb_ref *modb, unsigned int id,
-                       const char *username, const char *email)
-{
-  str_builder *sb;
-  char *table, *set;
-  size_t table_len, set_len;
-  int64_t qry_ret;
-
-  if ((sb = strbld_create()) == 0) {
-    return 0;
-  }
-  columnSetValueStr_sb(sb, "id", TYPE_ID, 1, id);
-  if (username != 0) {
-    strbld_char(sb, ',');
-    columnSetValueStr_sb(sb, "username", TYPE_STRING, 1, username);
-  }
-  if (email != 0) {
-    strbld_char(sb, ',');
-    columnSetValueStr_sb(sb, "email", TYPE_STRING, 1, email);
-  }
-  if (strbld_finalize_or_destroy(&sb, &set, &set_len) != 0) {
-    return 0;
-  }
-
-  modbTableName(&table, &table_len, modb, USERS_TABLE, strlen(USERS_TABLE));
-  qry_ret = updateQuery(sconn, table, table_len, set, set_len, where(0, "id", EQ, TYPE_ID, 1, id));
-  modbFreeTableName(&table);
-
-  free(set);
-
-  return qry_ret;
-}
-int modbUserDelete(stored_conn *sconn, modb_ref *modb, unsigned int id)
-{
-  char *table;
-  size_t table_len;
-  int64_t qry_ret;
-
-  modbTableName(&table, &table_len, modb, USERS_TABLE, STR_LEN(USERS_TABLE));
-  qry_ret = softDeleteByIdQuery(sconn, table, table_len, "id", id);
-  modbFreeTableName(&table);
-
-  return (int)qry_ret;
-}
-int modbUserDestroy(stored_conn *sconn, modb_ref *modb, unsigned int id)
-{
-  char *table;
-  size_t table_len;
-  int64_t qry_ret;
-
-  modbTableName(&table, &table_len, modb, USERS_TABLE, STR_LEN(USERS_TABLE));
-  qry_ret = deleteByIdQuery(sconn, table, table_len, "id", id);
-  modbFreeTableName(&table);
-
-  return (int)qry_ret;
-}
-
-
-int modbFetchUserGroupIds(stored_conn *sconn, modb_ref *modb,
-                          struct user_t *user, int with_deleted)
-{
-  char *g_table, *ug_table;
-  size_t g_len, ug_len;
-  char *qry;
-  size_t qry_len;
-  uint64_t qry_ret;
+  int res;
 
   str_builder *sb;
-  where_builder *wb;
 
   column_data **col_data;
   size_t n_cols;
 
+
   if ((sb = strbld_create()) == 0) {
     return -1;
   }
-  modbTableName(&g_table, &g_len, modb, GROUPS_TABLE, STR_LEN(GROUPS_TABLE));
-  modbTableName(&ug_table, &ug_len, modb, USER_GROUPS_TABLE, STR_LEN(USER_GROUPS_TABLE));
+  modbTableName(&table, &table_len, modb, GROUPS_TABLE, strlen(GROUPS_TABLE));
 
-  strbld_str(sb, "SELECT ", 0);
-  escapeColumnName_sb(sb, 0, 0, "group_id", 0);
-  strbld_str(sb, " FROM ", 0);
-  escapeTableName_sb(sb, ug_table, ug_len);
-  joinStr_sb(sb, " LEFT", 5, 1, g_table, g_len, "id", 2, ug_table, ug_len, "group_id", 8);
-  wb = where(0, "user_id", EQ, TYPE_ID, 1, user->id);
-  if (!with_deleted) {
-    wb = whereAnd(wb, where(g_table, "deleted", IS_NULL, TYPE_RAW, 0));
+  strbld_str(sb, "SELECT * FROM ", 0);
+  escapeTableName_sb(sb, table, table_len);
+  if (wb != 0) {
+    compileWhereBuilder_sb(sb, wb, 0);
   }
-  compileWhereBuilder_sb(sb, wb, 1);
 
-  modbFreeTableName(&g_table);
-  modbFreeTableName(&ug_table);
+  modbFreeTableName(&table);
   if (strbld_finalize_or_destroy(&sb, &qry, &qry_len) != 0) {
     return -1;
   }
@@ -233,113 +108,107 @@ int modbFetchUserGroupIds(stored_conn *sconn, modb_ref *modb,
     return 0;
   }
 
-  user->group_ids = (*col_data)->data.ptr_uint32;
-  user->n_groups = (*col_data)->n_values;
-  (*col_data)->data.ptr_uint32 = 0;
-
+  res = tableRowsToGroups(col_data, n_cols, groups, n_groups);
   freeColumns(col_data, n_cols);
 
-  return 1;
+  if (res <= 0) {
+    return res;
+  }
+
+  return (int)qry_ret;
 }
-int modbFetchUserGroups(stored_conn *sconn, modb_ref *modb, struct user_t *user, int with_deleted)
+int doScalarGroupsQuery(stored_conn *sconn, modb_ref *modb,
+                        where_builder *wb, int with_members, struct group_t **group)
 {
-  int ret;
-  size_t idx;
+  int res;
+  struct group_t **groups;
+  size_t n_groups;
 
-  ret = modbFetchUserGroupIds(sconn, modb, user, with_deleted);
-  if (ret != 1) {
-    return ret;
+  res = doGroupsQuery(sconn, modb, wb, &groups, &n_groups);
+  if (res <= 0) {
+    return res;
   }
 
-  user->groups = allocGroups(user->n_groups);
-  if (user->groups == 0) {
-    return -1;
-  }
+  *group = *(groups + 0);
+  *(groups + 0) = 0;
+  freeGroups(&groups, n_groups);
 
-  for (idx = 0; idx < user->n_groups; idx++) {
-    if (modbGroupById(sconn, modb, *(user->group_ids + idx), 0, (user->groups + idx)) != 1) {
-      freeGroups(&user->groups, user->n_groups);
+  if (with_members) {
+    if (modbFetchGroupUsers(sconn, modb, *group, 0) < 0) {
+      freeGroup(group);
       return -1;
     }
   }
 
-  return ret;
+  return res;
 }
 
 
-int modbSyncUserGroups(stored_conn *sconn, modb_ref *modb,
-                       unsigned int user_id, size_t n_groups, unsigned int *group_ids)
+// ##### PUBLIC
+struct group_t *allocGroup(void)
 {
-  char *table;
-  size_t table_len;
-  int64_t qry_ret;
+  struct group_t *group;
 
-  modbTableName(&table, &table_len, modb, USER_GROUPS_TABLE, STR_LEN(USER_GROUPS_TABLE));
-  qry_ret = syncIdMap(sconn, table, table_len, "user_id", "group_id", user_id, n_groups, group_ids);
-  modbFreeTableName(&table);
+  group = malloc(sizeof(struct group_t));
+  if (group == 0) {
+    fprintf(stderr, "[%d]malloc: (%d) %s\n", __LINE__, errno, strerror(errno));
+  }
+  memset(group, 0, sizeof(struct group_t));
 
-  return (int)qry_ret;
+  return group;
 }
-int modbSyncUserGroups_va(stored_conn *sconn, modb_ref *modb,
-                          unsigned int user_id, size_t n_groups, ...)
+struct group_t **allocGroups(size_t n_groups)
 {
-  va_list args;
-  char *table;
-  size_t table_len;
-  int64_t qry_ret;
+  struct group_t **groups;
 
-  va_start(args, n_groups);
-  modbTableName(&table, &table_len, modb, USER_GROUPS_TABLE, STR_LEN(USER_GROUPS_TABLE));
-  qry_ret = syncIdMap_va(sconn, table, table_len, "user_id", "group_id", user_id, n_groups, args);
-  modbFreeTableName(&table);
-  va_end(args);
+  groups = (struct group_t **)malloc(sizeof(struct group_t *) * n_groups);
+  if (groups == 0) {
+    fprintf(stderr, "[%d]malloc: (%d) %s\n", __LINE__, errno, strerror(errno));
+    return 0;
+  }
+  memset(groups, 0, sizeof(struct group_t *) * n_groups);
 
-  return (int)qry_ret;
+  return groups;
 }
-
-int modbIsLinked_User_Group(stored_conn *sconn, modb_ref *modb,
-                            unsigned int user_id, unsigned int group_id)
+void freeGroup(struct group_t **group_ptr)
 {
-  char *table;
-  size_t table_len;
-  int64_t qry_ret;
+  struct group_t *group = *group_ptr;
 
-  modbTableName(&table, &table_len, modb, USER_GROUPS_TABLE, STR_LEN(USER_GROUPS_TABLE));
-  qry_ret = hasIdMap(sconn, table, table_len, "user_id", "group_id", user_id, group_id);
-  modbFreeTableName(&table);
+  if (group->n_members > 0) {
+    if (group->member_ids != 0) {
+      free(group->member_ids);
+      group->member_ids = 0;
+    }
+    if (group->members != 0) {
+      freeUsers(&group->members, group->n_members);
+    }
+    group->n_members = 0;
+  }
 
-  return (int)qry_ret;
+  if (group->name != 0) {
+    free(group->name);
+    group->name = 0;
+  }
+
+  free(group);
+  *group_ptr = 0;
 }
-int modbLink_User_Group(stored_conn *sconn, modb_ref *modb,
-                        unsigned int user_id, unsigned int group_id)
+void freeGroups(struct group_t ***groups_ptr, size_t n_groups)
 {
-  char *table;
-  size_t table_len;
-  int64_t qry_ret;
+  size_t idx;
+  struct group_t **groups = *groups_ptr;
 
-  modbTableName(&table, &table_len, modb, USER_GROUPS_TABLE, STR_LEN(USER_GROUPS_TABLE));
-  qry_ret = hasIdMap(sconn, table, table_len, "user_id", "group_id", user_id, group_id);
-  modbFreeTableName(&table);
+  for (idx = 0; idx < n_groups; idx++) {
+    if (*(groups + idx) != 0) {
+      freeGroup(groups + idx);
+    }
+  }
 
-  return (int)qry_ret;
-}
-int modbUnlink_User_Group(stored_conn *sconn, modb_ref *modb,
-                          unsigned int user_id, unsigned int group_id)
-{
-  char *table;
-  size_t table_len;
-  int64_t qry_ret;
-
-  modbTableName(&table, &table_len, modb, USER_GROUPS_TABLE, STR_LEN(USER_GROUPS_TABLE));
-  qry_ret = hasIdMap(sconn, table, table_len, "user_id", "group_id", user_id, group_id);
-  modbFreeTableName(&table);
-
-  return (int)qry_ret;
+  free(groups);
+  *groups_ptr = 0;
 }
 
 
-
-// ##### GROUPS
 int modbGroupById(stored_conn *sconn, modb_ref *modb, unsigned int id, int with_members,
                   struct group_t **group)
 {
