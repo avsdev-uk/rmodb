@@ -25,9 +25,23 @@ int64_t modbUserUpdate(stored_conn *sconn, modb_ref *modb, unsigned int id,
 int modbUserDelete(stored_conn *sconn, modb_ref *modb, unsigned int id);
 int modbUserDestroy(stored_conn *sconn, modb_ref *modb, unsigned int id);
 
+
+// MODB Users -> Groups
 int modbFetchUserGroupIds(stored_conn *sconn, modb_ref *modb,
                           struct user_t *user, int with_deleted);
 int modbFetchUserGroups(stored_conn *sconn, modb_ref *modb, struct user_t *user, int with_deleted);
+
+int modbSyncUserGroups(stored_conn *sconn, modb_ref *modb,
+                       unsigned int user_id, size_t n_groups, unsigned int *group_id);
+int modbSyncUserGroups_va(stored_conn *sconn, modb_ref *modb,
+                          unsigned int user_id, size_t n_groups, ...);
+
+int modbIsLinked_User_Group(stored_conn *sconn, modb_ref *modb,
+                            unsigned int user_id, unsigned int group_id);
+int modbLink_User_Group(stored_conn *sconn, modb_ref *modb,
+                        unsigned int user_id, unsigned int group_id);
+int modbUnlink_User_Group(stored_conn *sconn, modb_ref *modb,
+                          unsigned int user_id, unsigned int group_id);
 
 
 // MODB Groups
@@ -51,24 +65,18 @@ int modbFetchGroupUserIds(stored_conn *sconn, modb_ref *modb, struct group_t *gr
 int modbFetchGroupUsers(stored_conn *sconn, modb_ref *modb, struct group_t *group,
                         int with_deleted);
 
-
-// MODB Users <-> Groups
-int modbSyncUserGroups(stored_conn *sconn, modb_ref *modb,
-                       unsigned int user_id, size_t n_groups, unsigned int *group_id);
-int modbSyncUserGroups_va(stored_conn *sconn, modb_ref *modb,
-                          unsigned int user_id, size_t n_groups, ...);
+// MODB Groups -> Users
 int modbSyncGroupUsers(stored_conn *sconn, modb_ref *modb,
                        unsigned int group_id, size_t n_users, unsigned int *user_id);
 int modbSyncGroupUsers_va(stored_conn *sconn, modb_ref *modb,
                           unsigned int group_id, size_t n_users, ...);
 
-
 int modbIsLinked_Group_User(stored_conn *sconn, modb_ref *modb,
-                            unsigned int user_id, unsigned int group_id);
+                            unsigned int group_id, unsigned int user_id);
 int modbLink_Group_User(stored_conn *sconn, modb_ref *modb,
-                        unsigned int user_id, unsigned int group_id);
+                        unsigned int group_id, unsigned int user_id);
 int modbUnlink_Group_User(stored_conn *sconn, modb_ref *modb,
-                          unsigned int user_id, unsigned int group_id);
+                          unsigned int group_id, unsigned int user_id);
 
 
 #endif // H__MODB_ACCOUNTING__

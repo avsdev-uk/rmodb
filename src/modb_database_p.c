@@ -151,6 +151,8 @@ void connectionUnuseMODB(stored_conn *sconn)
 uint64_t createMODBTable(stored_conn *sconn, modb_ref *modb, const char *suffix, size_t suffix_len,
                          const char *table_def, size_t table_def_len)
 {
+  char *table;
+  size_t table_len;
   char *qry;
   uint64_t res;
   size_t qry_len;
@@ -159,10 +161,14 @@ uint64_t createMODBTable(stored_conn *sconn, modb_ref *modb, const char *suffix,
   if ((sb = strbld_create()) == 0) {
     return (uint64_t)-1;
   }
+  modbTableName(&table, &table_len, modb, suffix, suffix_len);
+
   strbld_str(sb, "CREATE TABLE ", 0);
-  modbTableName_sb(sb, modb, suffix, suffix_len, '`');
+  escapeTableName_sb(sb, table, table_len);
   strbld_char(sb, ' ');
   strbld_str(sb, table_def, table_def_len);
+
+  modbFreeTableName(&table);
   if (strbld_finalize_or_destroy(&sb, &qry, &qry_len) != 0) {
     return (uint64_t)-1;
   }
@@ -181,12 +187,15 @@ int MODBTableExists(stored_conn *sconn, modb_ref *modb, const char *suffix, size
   int retval = 0;
 
   if ((sb = strbld_create()) == 0) {
-    return -errno;
+    return -1;
   }
-  strbld_str(sb, "SHOW TABLES LIKE ", 0);
-  modbTableName_sb(sb, modb, suffix, suffix_len, '\'');
+
+  strbld_str(sb, "SHOW TABLES LIKE '", 0);
+  modbTableName_sb(sb, modb, suffix, suffix_len);
+  strbld_char(sb, '\'');
+
   if (strbld_finalize_or_destroy(&sb, &qry, &qry_len) != 0) {
-    return -errno;
+    return -1;
   }
 
   res = scalarString(sconn, qry, qry_len, "Z");
@@ -216,6 +225,8 @@ int MODBTableExists(stored_conn *sconn, modb_ref *modb, const char *suffix, size
 
 uint64_t destroyMODBTable(stored_conn *sconn, modb_ref *modb, const char *suffix, size_t suffix_len)
 {
+  char *table;
+  size_t table_len;
   char *qry;
   uint64_t res;
   size_t qry_len;
@@ -224,8 +235,12 @@ uint64_t destroyMODBTable(stored_conn *sconn, modb_ref *modb, const char *suffix
   if ((sb = strbld_create()) == 0) {
     return (uint64_t)-1;
   }
+  modbTableName(&table, &table_len, modb, suffix, suffix_len);
+
   strbld_str(sb, "DROP TABLE IF EXISTS ", 0);
-  modbTableName_sb(sb, modb, suffix, suffix_len, '`');
+  escapeTableName_sb(sb, table, table_len);
+
+  modbFreeTableName(&table);
   if (strbld_finalize_or_destroy(&sb, &qry, &qry_len) != 0) {
     return (uint64_t)-1;
   }
@@ -257,6 +272,7 @@ uint64_t createMetaTable(stored_conn *sconn, modb_ref *modb)
         METADATA_TABLE, STR_LEN(METADATA_TABLE),
         "("
         "`mdo_id` INT UNSIGNED NOT NULL AUTO_INCREMENT, "
+        "`type` VARCHAR(255) NOT NULL, "
         "`title` VARCHAR(255) NOT NULL, "
         "`owner_id` INT UNSIGNED NOT NULL, "
         "`created` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, "
@@ -273,7 +289,7 @@ uint64_t createObjectsTable(stored_conn *sconn, modb_ref *modb)
         OBJECTS_TABLE, STR_LEN(OBJECTS_TABLE),
         "("
         "`mdo_id` INT UNSIGNED NOT NULL, "
-        "`object` MEDIUMBLOB NOT NULL, "
+        "`object` MEDIUMBLOB NULL, "
         "PRIMARY KEY (`mdo_id`)"
         ")", 0
         );
@@ -355,7 +371,8 @@ uint64_t createMetaExtTable(stored_conn *sconn, modb_ref *modb,
   strbld_str(sb, "("
                  "`mdo_id` INT UNSIGNED NOT NULL", 0);
   for (size_t c = 0; c < cols; c++) {
-    createColumn_sb(sb, *(col_data + c));
+    strbld_str(sb, ", ", 2);
+    columnCreateStr_sb(sb, *(col_data + c));
   }
   strbld_str(sb, ", INDEX (`mdo_id`)"
                  ")", 0);

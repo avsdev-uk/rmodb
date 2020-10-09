@@ -20,17 +20,17 @@ int tableRowsToUsers(column_data **col_data, size_t n_cols,
     return 0;
   }
 
-  col_id = findColumn(col_data, n_cols, "id");
-  col_username = findColumn(col_data, n_cols, "username");
-  col_email = findColumn(col_data, n_cols, "email");
-  col_created = findColumn(col_data, n_cols, "created");
-  col_updated = findColumn(col_data, n_cols, "updated");
-  col_deleted = findColumn(col_data, n_cols, "deleted");
+  col_id = findColumnByName(col_data, n_cols, "id");
+  col_username = findColumnByName(col_data, n_cols, "username");
+  col_email = findColumnByName(col_data, n_cols, "email");
+  col_created = findColumnByName(col_data, n_cols, "created");
+  col_updated = findColumnByName(col_data, n_cols, "updated");
+  col_deleted = findColumnByName(col_data, n_cols, "deleted");
 
   *users = (struct user_t **)malloc(sizeof(struct user_t *) * n_rows);
   if (*users == 0) {
     fprintf(stderr, "[%d]malloc: (%d) %s\n", __LINE__, errno, strerror(errno));
-    return -errno;
+    return -1;
   }
   memset(*users, 0, sizeof(struct user_t *) * n_rows);
 
@@ -71,6 +71,8 @@ int tableRowsToUsers(column_data **col_data, size_t n_cols,
 int doUsersQuery(stored_conn *sconn, modb_ref *modb, where_builder *wb,
                  struct user_t ***users, size_t *n_users)
 {
+  char *table;
+  size_t table_len;
   char *qry;
   size_t qry_len;
   uint64_t qry_ret;
@@ -83,16 +85,19 @@ int doUsersQuery(stored_conn *sconn, modb_ref *modb, where_builder *wb,
 
 
   if ((sb = strbld_create()) == 0) {
-    return -errno;
+    return -1;
   }
+  modbTableName(&table, &table_len, modb, USERS_TABLE, strlen(USERS_TABLE));
+
   strbld_str(sb, "SELECT * FROM ", 0);
-  modbTableName_sb(sb, modb, USERS_TABLE, strlen(USERS_TABLE), '`');
+  escapeTableName_sb(sb, table, table_len);
   if (wb != 0) {
-    strbld_str(sb, " WHERE ", 0);
-    compileWhereBuilder_sb(wb, sb, 0);
+    compileWhereBuilder_sb(sb, wb, 0);
   }
+
+  modbFreeTableName(&table);
   if (strbld_finalize_or_destroy(&sb, &qry, &qry_len) != 0) {
-    return -errno;
+    return -1;
   }
 
   qry_ret = tableQuery(sconn, qry, qry_len, 0, &col_data, &n_cols);
@@ -158,16 +163,16 @@ int tableRowsToGroups(column_data **col_data, size_t n_cols,
     return 0;
   }
 
-  col_id = findColumn(col_data, n_cols, "id");
-  col_name = findColumn(col_data, n_cols, "name");
-  col_created = findColumn(col_data, n_cols, "created");
-  col_updated = findColumn(col_data, n_cols, "updated");
-  col_deleted = findColumn(col_data, n_cols, "deleted");
+  col_id = findColumnByName(col_data, n_cols, "id");
+  col_name = findColumnByName(col_data, n_cols, "name");
+  col_created = findColumnByName(col_data, n_cols, "created");
+  col_updated = findColumnByName(col_data, n_cols, "updated");
+  col_deleted = findColumnByName(col_data, n_cols, "deleted");
 
   *groups = (struct group_t **)malloc(sizeof(struct group_t *) * n_rows);
   if (*groups == 0) {
     fprintf(stderr, "[%d]malloc: (%d) %s\n", __LINE__, errno, strerror(errno));
-    return -errno;
+    return -1;
   }
   memset(*groups, 0, sizeof(struct group_t *) * n_rows);
 
@@ -202,6 +207,8 @@ int tableRowsToGroups(column_data **col_data, size_t n_cols,
 int doGroupsQuery(stored_conn *sconn, modb_ref *modb, where_builder *wb,
                   struct group_t ***groups, size_t *n_groups)
 {
+  char *table;
+  size_t table_len;
   char *qry;
   size_t qry_len;
   uint64_t qry_ret;
@@ -216,12 +223,15 @@ int doGroupsQuery(stored_conn *sconn, modb_ref *modb, where_builder *wb,
   if ((sb = strbld_create()) == 0) {
     return -1;
   }
+  modbTableName(&table, &table_len, modb, GROUPS_TABLE, strlen(GROUPS_TABLE));
+
   strbld_str(sb, "SELECT * FROM ", 0);
-  modbTableName_sb(sb, modb, GROUPS_TABLE, strlen(GROUPS_TABLE), '`');
+  escapeTableName_sb(sb, table, table_len);
   if (wb != 0) {
-    strbld_str(sb, " WHERE ", 0);
-    compileWhereBuilder_sb(wb, sb, 0);
+    compileWhereBuilder_sb(sb, wb, 0);
   }
+
+  modbFreeTableName(&table);
   if (strbld_finalize_or_destroy(&sb, &qry, &qry_len) != 0) {
     return -1;
   }
