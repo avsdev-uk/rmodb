@@ -237,7 +237,6 @@ where_builder *whereNotIn(where_builder *wb, const char *tbl, const char *col,
 where_builder *whereNotIn_va(where_builder *wb, const char *tbl, const char *col,
                              e_column_type type, uint32_t n_args, va_list args)
 {
-
   return where_In_notIn_va(wb, tbl, col, NOT_IN, type, n_args, args);
 }
 
