@@ -2,9 +2,41 @@
 #define H__MODB_METADATA__
 
 #include "database.h"
-#include "modb_types.h"
+#include "modb_ref.h"
 
-// MODB MetadataList
+
+// Metadata object
+struct metadata_t {
+  unsigned int id;
+
+  char *type;
+  size_t type_len;
+
+  char *title;
+  size_t title_len;
+
+  unsigned int owner_id;
+  struct user_t *owner;
+
+  int64_t created_on;
+  int64_t updated_on;
+  int64_t deleted_on;
+
+  unsigned int *group_ids;
+  struct group_t **groups;
+  size_t n_groups;
+
+  struct object_t *object;
+  struct metadata_ext_t *ext;
+};
+
+struct metadata_t *allocMetadata(void);
+struct metadata_t **allocMetadataList(size_t n_metadatas);
+void freeMetadata(struct metadata_t **metadata);
+void freeMetadataList(struct metadata_t ***metadata_list_ptr, size_t n_metadatas);
+
+
+// MODB Metadata
 int modbMetadataById(stored_conn *sconn, modb_ref *modb, unsigned int id,
                      struct metadata_t **metadata);
 // MetadataList by owner

@@ -3,11 +3,14 @@
 #include <stdio.h>
 
 #include "modb_metadata.h"
+#include "modb_objects.h"
+#include "modb_metadata_ext.h"
 #include "modb_users.h"
 #include "modb_groups.h"
 #include "modb_p.h"
 
 
+// ##### PRIVATE
 int tableRowsToMetadataList(column_data **col_data, size_t n_cols,
                             struct metadata_t ***metadata_list, size_t *n_metadatas)
 {
@@ -139,6 +142,83 @@ int doScalarMetadataListQuery(stored_conn *sconn, modb_ref *modb,
   return res;
 }
 
+
+
+// ##### PUBLIC
+struct metadata_t *allocMetadata(void)
+{
+  struct metadata_t *metadata;
+
+  metadata = malloc(sizeof(struct metadata_t));
+  if (metadata == 0) {
+    fprintf(stderr, "[%d]malloc: (%d) %s\n", __LINE__, errno, strerror(errno));
+  }
+  memset(metadata, 0, sizeof(struct metadata_t));
+
+  return metadata;
+}
+struct metadata_t **allocMetadataList(size_t n_metadatas)
+{
+  struct metadata_t **metadatas;
+
+  metadatas = (struct metadata_t **)malloc(sizeof(struct metadata_t *) * n_metadatas);
+  if (metadatas == 0) {
+    fprintf(stderr, "[%d]malloc: (%d) %s\n", __LINE__, errno, strerror(errno));
+    return 0;
+  }
+  memset(metadatas, 0, sizeof(struct metadata_t *) * n_metadatas);
+
+  return metadatas;
+}
+void freeMetadata(struct metadata_t **metadata_ptr)
+{
+  struct metadata_t *metadata = *metadata_ptr;
+
+  if (metadata->ext != 0) {
+    freeMetadataExt(&metadata->ext);
+  }
+
+  if (metadata->object != 0) {
+    freeObject(&metadata->object);
+  }
+
+  if (metadata->n_groups > 0) {
+    if (metadata->group_ids != 0) {
+      free(metadata->group_ids);
+      metadata->group_ids = 0;
+    }
+    if (metadata->groups != 0) {
+      freeGroups(&metadata->groups, metadata->n_groups);
+    }
+    metadata->n_groups = 0;
+  }
+
+  if (metadata->owner != 0) {
+    freeUser(&metadata->owner);
+  }
+
+  if (metadata->title != 0) {
+    free(metadata->title);
+    metadata->title = 0;
+  }
+
+  free(metadata);
+  *metadata_ptr = 0;
+}
+void freeMetadataList(struct metadata_t ***metadata_list_ptr, size_t n_metadatas)
+{
+  size_t idx;
+  struct metadata_t **metadatas_list= *metadata_list_ptr;
+
+  for (idx = 0; idx < n_metadatas; idx++) {
+    if (*(metadatas_list + idx) != 0) {
+      freeMetadata((metadatas_list + idx));
+    }
+  }
+
+  free(metadatas_list);
+  *metadata_list_ptr = 0;
+}
 
 
 int modbMetadataById(stored_conn *sconn, modb_ref *modb, unsigned int id,

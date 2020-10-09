@@ -2,7 +2,7 @@
 #define H__MODB_USERS__
 
 #include "database.h"
-#include "modb_types.h"
+#include "modb_ref.h"
 
 
 // User object

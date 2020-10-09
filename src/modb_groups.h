@@ -2,7 +2,8 @@
 #define H__MODB_GROUPS__
 
 #include "database.h"
-#include "modb_types.h"
+#include "modb_ref.h"
+
 
 // Group object
 struct group_t {

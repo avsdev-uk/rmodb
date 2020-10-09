@@ -6,6 +6,7 @@
 #include "modb_p.h"
 
 
+// ##### PRIVATE
 int tableRowsToObjects(column_data **col_data, size_t n_cols,
                        struct object_t ***objects, size_t *n_objects)
 {
@@ -123,6 +124,59 @@ int doScalarObjectsQuery(stored_conn *sconn, modb_ref *modb,
   return res;
 }
 
+
+// ##### PUBLIC
+struct object_t *allocObject(void)
+{
+  struct object_t *object;
+
+  object = malloc(sizeof(struct object_t));
+  if (object == 0) {
+    fprintf(stderr, "[%d]malloc: (%d) %s\n", __LINE__, errno, strerror(errno));
+  }
+  memset(object, 0, sizeof(struct object_t));
+
+  return object;
+}
+struct object_t **allocObjects(size_t n_objects)
+{
+  struct object_t **objects;
+
+  objects = (struct object_t **)malloc(sizeof(struct object_t *) * n_objects);
+  if (objects == 0) {
+    fprintf(stderr, "[%d]malloc: (%d) %s\n", __LINE__, errno, strerror(errno));
+    return 0;
+  }
+  memset(objects, 0, sizeof(struct object_t *) * n_objects);
+
+  return objects;
+}
+void freeObject(struct object_t **object_ptr)
+{
+  struct object_t *object = *object_ptr;
+
+  if (object->data != 0) {
+    free(object->data);
+    object->data = 0;
+  }
+
+  free(object);
+  *object_ptr = 0;
+}
+void freeObjects(struct object_t ***objects_ptr, size_t n_objects)
+{
+  size_t idx;
+  struct object_t **objects = *objects_ptr;
+
+  for (idx = 0; idx < n_objects; idx++) {
+    if (*(objects + idx) != 0) {
+      freeObject(objects + idx);
+    }
+  }
+
+  free(objects);
+  *objects_ptr = 0;
+}
 
 
 int modbObjectById(stored_conn *sconn, modb_ref *modb, unsigned int id,

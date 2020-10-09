@@ -5,7 +5,7 @@
 #include <stddef.h>
 
 #include "database.h"
-#include "modb_types.h"
+#include "modb_ref.h"
 
 
 int connectionUseMODB(stored_conn *sconn, modb_ref *modb, int override);

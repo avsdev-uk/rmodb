@@ -3,9 +3,9 @@
 
 #include <stddef.h>
 
-#include "modb_types.h"
 #include "database.h"
 #include "strext.h"
+#include "modb_ref.h"
 
 
 #define SYS_TABLE "_sys"
