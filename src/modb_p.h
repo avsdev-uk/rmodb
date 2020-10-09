@@ -9,7 +9,7 @@
 
 
 #define SYS_TABLE "_sys"
-#define METADATA_TABLE "_meta"
+#define METADATA_TABLE "_metadata"
 #define OBJECTS_TABLE "_objects"
 #define MDO_GROUPS_TABLE "_mdo_groups"
 
