@@ -94,6 +94,7 @@ int doMetadataListQuery(stored_conn *sconn, modb_ref *modb, where_builder *wb,
   if (wb != 0) {
     compileWhereBuilder_sb(sb, wb, 0);
   }
+  strbld_str(sb, " ORDER BY `updated` DESC, `created` DESC", 0);
 
   modbFreeTableName(&table);
   if (strbld_finalize_or_destroy(&sb, &qry, &qry_len) != 0) {
@@ -670,7 +671,7 @@ int modbLink_Metadata_Group(stored_conn *sconn, modb_ref *modb,
   int64_t qry_ret;
 
   modbTableName(&table, &table_len, modb, MDO_GROUPS_TABLE, STR_LEN(MDO_GROUPS_TABLE));
-  qry_ret = hasIdMap(sconn, table, table_len, "mdo_id", "group_id", metadata_id, group_id);
+  qry_ret = addIdMap(sconn, table, table_len, "mdo_id", "group_id", metadata_id, group_id);
   modbFreeTableName(&table);
 
   return (int)qry_ret;
@@ -683,7 +684,7 @@ int modbUnlink_Metadata_Group(stored_conn *sconn, modb_ref *modb,
   int64_t qry_ret;
 
   modbTableName(&table, &table_len, modb, MDO_GROUPS_TABLE, STR_LEN(MDO_GROUPS_TABLE));
-  qry_ret = hasIdMap(sconn, table, table_len, "mdo_id", "group_id", metadata_id, group_id);
+  qry_ret = removeIdMap(sconn, table, table_len, "mdo_id", "group_id", metadata_id, group_id);
   modbFreeTableName(&table);
 
   return (int)qry_ret;

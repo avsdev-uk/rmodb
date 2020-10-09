@@ -508,7 +508,7 @@ int modbUnlink_Group_User(stored_conn *sconn, modb_ref *modb,
   int64_t qry_ret;
 
   modbTableName(&table, &table_len, modb, USER_GROUPS_TABLE, STR_LEN(USER_GROUPS_TABLE));
-  qry_ret = addIdMap(sconn, table, table_len, "group_id", "user_id", group_id, user_id);
+  qry_ret = removeIdMap(sconn, table, table_len, "group_id", "user_id", group_id, user_id);
   modbFreeTableName(&table);
 
   return (int)qry_ret;

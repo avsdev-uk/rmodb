@@ -531,7 +531,7 @@ int modbLink_User_Group(stored_conn *sconn, modb_ref *modb,
   int64_t qry_ret;
 
   modbTableName(&table, &table_len, modb, USER_GROUPS_TABLE, STR_LEN(USER_GROUPS_TABLE));
-  qry_ret = hasIdMap(sconn, table, table_len, "user_id", "group_id", user_id, group_id);
+  qry_ret = addIdMap(sconn, table, table_len, "user_id", "group_id", user_id, group_id);
   modbFreeTableName(&table);
 
   return (int)qry_ret;
@@ -544,7 +544,7 @@ int modbUnlink_User_Group(stored_conn *sconn, modb_ref *modb,
   int64_t qry_ret;
 
   modbTableName(&table, &table_len, modb, USER_GROUPS_TABLE, STR_LEN(USER_GROUPS_TABLE));
-  qry_ret = hasIdMap(sconn, table, table_len, "user_id", "group_id", user_id, group_id);
+  qry_ret = removeIdMap(sconn, table, table_len, "user_id", "group_id", user_id, group_id);
   modbFreeTableName(&table);
 
   return (int)qry_ret;
