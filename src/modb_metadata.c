@@ -271,11 +271,6 @@ int modbMetadataListByGroupId(stored_conn *sconn, modb_ref *modb, unsigned int g
     return 0;
   }
 
-  *metadata_list = (struct metadata_t **)malloc(sizeof(struct metadata_t *) * n_ids);
-  if (*metadata_list == 0) {
-    return -1;
-  }
-
   wb = whereIn(0, 0, "mdo_id", TYPE_ID, 0);
   for (idx = 0; idx < n_ids; idx++) {
     setWhereValue(wb, TYPE_ID, 1, *(ids + idx));
@@ -285,6 +280,7 @@ int modbMetadataListByGroupId(stored_conn *sconn, modb_ref *modb, unsigned int g
     freeWhereBuilder(&wb);
   }
 
+  free(ids);
   return res;
 }
 
