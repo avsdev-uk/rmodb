@@ -77,10 +77,12 @@ void db_value_sbva(str_builder *sb, e_column_type type, uint32_t n_args, va_list
       return;
     }
 
-    if (n_args == 1) {
-      tmp_len = strlen(tmp_str);
-    } else {
+    if (n_args == 2) {
       tmp_len = va_arg(args, size_t);
+    }
+
+    if (n_args == 1 || (tmp_str != 0 && tmp_len == 0)) {
+      tmp_len = strlen(tmp_str);
     }
 
 
@@ -126,7 +128,7 @@ void db_value_sbva(str_builder *sb, e_column_type type, uint32_t n_args, va_list
     esc_str[1] = 'x';
     esc_len = mysql_hex_string(esc_str + 2, tmp_str, tmp_len);
 
-    strbld_str(sb, esc_str, esc_len);
+    strbld_str(sb, esc_str, esc_len + 2);
 
     free(esc_str);
     return;

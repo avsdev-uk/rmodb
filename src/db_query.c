@@ -504,7 +504,7 @@ int64_t addIdMap(struct stored_conn_t *sconn, const char *table, size_t table_le
 
   strbld_str(sb, "INSERT INTO ", 12);
   escapeTableName_sb(sb, table, table_len);
-  strbld_str(sb, table, 0);
+  strbld_char(sb, ' ');
   strbld_char(sb, '(');
   escapeColumnName_sb(sb, 0, 0, primary_col, 0);
   strbld_char(sb, ',');
@@ -528,7 +528,7 @@ int64_t addIdMap(struct stored_conn_t *sconn, const char *table, size_t table_le
     return -1;
   }
 
-  return (qry_ret > 0);
+  return qry_ret == 0;
 }
 int64_t removeIdMap(struct stored_conn_t *sconn, const char *table, size_t table_len,
                     const char *primary_col, const char *map_col,
